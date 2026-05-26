@@ -88,6 +88,44 @@
       </div>
     </div>
 
+    <!-- Voice Commands Reference -->
+    <div class="glass-card rounded-3xl p-4 shadow-xl transition-all duration-300 hover:border-slate-800">
+      <details class="group focus:outline-none">
+        <summary class="flex justify-between items-center font-bold text-xs tracking-wider text-slate-400 uppercase cursor-pointer list-none focus:outline-none select-none">
+          <span><i class="fa-solid fa-circle-question text-violet-400 mr-1.5"></i> Voice Commands Cheat Sheet</span>
+          <span class="transition group-open:rotate-180">
+            <i class="fa-solid fa-chevron-down text-slate-500"></i>
+          </span>
+        </summary>
+        <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex flex-col gap-2">
+          <div class="flex justify-between border-b border-slate-900 pb-1.5">
+            <span class="font-bold text-slate-300">"on" / "turn on" / "study mode"</span>
+            <span class="text-emerald-400 font-semibold">Power ON (100%)</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-900 pb-1.5">
+            <span class="font-bold text-slate-300">"off" / "turn off" / "kill"</span>
+            <span class="text-rose-400 font-semibold">Power OFF</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-900 pb-1.5">
+            <span class="font-bold text-slate-300">"rainbow" / "party"</span>
+            <span class="text-violet-400 font-semibold">Rainbow Effect</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-900 pb-1.5">
+            <span class="font-bold text-slate-300">"breathe" / "breathing"</span>
+            <span class="text-cyan-400 font-semibold">Breathing Pulse</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-900 pb-1.5">
+            <span class="font-bold text-slate-300">"disco" / "disco lights"</span>
+            <span class="text-fuchsia-400 font-semibold">🕺 Disco Flash</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-bold text-slate-300">"[color name]" (e.g., "red", "blue")</span>
+            <span class="text-yellow-400 font-semibold">Change Color</span>
+          </div>
+        </div>
+      </details>
+    </div>
+
     <!-- System Power Control -->
     <div class="glass-card rounded-3xl p-5 flex flex-col gap-3 shadow-xl">
       <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1"><i class="fa-solid fa-power-off text-violet-400 mr-1.5"></i> System Power</h3>
@@ -115,12 +153,15 @@
     <div class="glass-card rounded-3xl p-5 flex flex-col gap-4 shadow-xl">
       <div>
         <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3"><i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400 mr-1.5"></i> Animation Modes</h3>
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="sendCommand('RAINBOW')" class="p-3.5 rounded-2xl bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-cyan-600/30 hover:from-violet-600/40 hover:via-fuchsia-600/40 hover:to-cyan-600/40 border border-violet-500/20 text-white font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200">
-            🌈 Rainbow Effect
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="sendCommand('RAINBOW')" class="p-2.5 rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 font-semibold text-[10px] tracking-wide transition-all active:scale-95 duration-200">
+            🌈 Rainbow
           </button>
-          <button onclick="sendCommand('BREATHE')" class="p-3.5 rounded-2xl bg-slate-900/80 hover:bg-slate-900 border border-slate-800 text-white font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200">
-            🌬️ Breathing Pulse
+          <button onclick="sendCommand('BREATHE')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-900 text-slate-300 font-semibold text-[10px] tracking-wide transition-all active:scale-95 duration-200">
+            🌬️ Breathe
+          </button>
+          <button onclick="sendCommand('DISCO')" class="p-2.5 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-300 hover:bg-fuchsia-500/20 font-semibold text-[10px] tracking-wide transition-all active:scale-95 duration-200">
+            🕺 Disco
           </button>
         </div>
       </div>
@@ -163,6 +204,7 @@
   <script>
     // State values
     let currentBrightness = 80;
+    let lastSelectedScene = 'ON';
     const LIVE_URL = '/api/lights';
     const LOGS_URL = '/api/logs';
 
@@ -175,10 +217,15 @@
     const speechBubble = document.getElementById('speech-bubble');
     const logsContainer = document.getElementById('logs-container');
 
-    // Update Slider UI
+    // Update Slider UI & Send Active Event
     brightnessSlider.addEventListener('input', (e) => {
       currentBrightness = parseInt(e.target.value);
       brightnessDisplay.textContent = `${currentBrightness}%`;
+    });
+
+    brightnessSlider.addEventListener('change', (e) => {
+      currentBrightness = parseInt(e.target.value);
+      sendCommand(lastSelectedScene, currentBrightness);
     });
 
     // Toast Functionality
@@ -208,6 +255,7 @@
 
     // HTTP Payload Sender
     async function sendCommand(scene, brightness = currentBrightness, triggerSource = "App Button Click", spokenText = null) {
+      lastSelectedScene = scene; // Track the active scene for brightness updates
       try {
         const response = await fetch(LIVE_URL, {
           method: 'POST',
@@ -302,6 +350,10 @@
       }
       if (speech.includes('breathe') || speech.includes('breathing')) {
         sendCommand('BREATHE', 60, "Voice Command", speech);
+        return;
+      }
+      if (speech.includes('disco') || speech.includes('disco lights') || speech.includes('disco flash') || speech.includes('strobe')) {
+        sendCommand('DISCO', 100, "Voice Command", speech);
         return;
       }
       
