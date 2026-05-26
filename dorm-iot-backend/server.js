@@ -4,6 +4,7 @@ const mqtt = require('mqtt');
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const Student = require('./student'); // Import our new database schema
+const Activity = require('./activity'); // Import our activity logs schema
 
 const app = express();
 app.use(express.json());
@@ -64,11 +65,25 @@ mqttClient.on('message', async (topic, message) => {
             if (student) {
                 console.log(`✅ Access Granted: User verified as ${student.name}`);
                 sendNotificationEmail(student.name, student.room, student.parentEmail);
+                
+                // Log successful access
+                await Activity.create({
+                    status: "UNLOCKED",
+                    eventType: "RFID Swipe",
+                    triggeredBy: student.name
+                });
             } else {
                 console.log(`❌ Access Denied: Unknown UID ${scannedUID}`);
+                
+                // Log intruder alert
+                await Activity.create({
+                    status: "ALARM_INTRUDER",
+                    eventType: "RFID Swipe",
+                    triggeredBy: `Unknown Token (${scannedUID})`
+                });
             }
         } catch (err) {
-            console.error('❌ Database query failure:', err);
+            console.error('❌ Database logging error:', err);
         }
     }
 });
@@ -80,11 +95,35 @@ app.get('/', (req, res) => {
     res.send('🚀 Smart RFID Dormitory Backend is up and running!');
 });
 
-app.post('/api/lights', (req, res) => {
+app.post('/api/lights', async (req, res) => {
     const { scene, brightness } = req.body;
     console.log(`📱 App Command Received -> Scene: ${scene}, Brightness: ${brightness}`);
-    mqttClient.publish('home/room/lights/set', JSON.stringify({ scene, brightness }), { qos: 1 });
-    res.status(200).json({ status: "success", message: "Command pushed to MQTT" });
+    
+    try {
+        mqttClient.publish('home/room/lights/set', JSON.stringify({ scene, brightness }), { qos: 1 });
+        
+        // Record the app interaction to MongoDB
+        await Activity.create({
+            status: `Scene: ${scene}, Brightness: ${brightness}`,
+            eventType: "App Button Click",
+            triggeredBy: "Mobile User"
+        });
+        
+        res.status(200).json({ status: "success", message: "Command pushed to MQTT and logged" });
+    } catch (err) {
+        console.error('❌ Failed to log light command:', err);
+        res.status(500).json({ error: "Failed to log action" });
+    }
+});
+
+app.get('/api/logs', async (req, res) => {
+    try {
+        // Fetch the 20 most recent events, sorted newest first
+        const logs = await Activity.find().sort({ timestamp: -1 }).limit(20);
+        res.status(200).json(logs);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch access logs" });
+    }
 });
 
 app.listen(PORT, () => {
