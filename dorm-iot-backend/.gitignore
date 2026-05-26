@@ -1,0 +1,7 @@
+node_modules/
+.env
+.gcloudignore
+.dockerignore
+npm-debug.log
+test-publish.js
+test-subscribe.js
