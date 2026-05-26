@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 8080;
 
 // SSE client registry — keeps track of all door page connections
 let sseClients = [];
+let lastDoorEvent = null;  // Cached for new clients that connect after a swipe
 
 // ----------------------------------------------------
 // 1. DATABASE CONNECTIVITY (Replaces hardcoded object)
@@ -108,6 +109,7 @@ mqttClient.on('message', async (topic, message, packet) => {
 // 4. SSE HELPER — Broadcasts door events to all connected clients
 // ----------------------------------------------------
 function broadcastDoorEvent(payload) {
+    lastDoorEvent = payload;  // Cache so new clients get current state immediately
     const data = `data: ${JSON.stringify(payload)}\n\n`;
     sseClients.forEach(res => {
         try { res.write(data); } catch (e) { /* stale client — will be cleaned up on close */ }
@@ -127,17 +129,37 @@ app.get('/api/door-stream', (req, res) => {
     res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering on Cloud Run
     res.flushHeaders();
 
-    // Send a heartbeat immediately to confirm connection
+    // Confirm connection
     res.write(`data: ${JSON.stringify({ type: 'CONNECTED', timestamp: new Date().toISOString() })}\n\n`);
+
+    // Replay last known door state so the page is never blank on open
+    if (lastDoorEvent) {
+        res.write(`data: ${JSON.stringify({ ...lastDoorEvent, replayed: true })}\n\n`);
+    }
 
     sseClients.push(res);
     console.log(`🔌 Virtual Door client connected. Total: ${sseClients.length}`);
 
-    // Remove client when connection closes
+    // Keepalive ping every 20s — prevents Cloud Run from killing idle SSE connections
+    const keepAlive = setInterval(() => {
+        try {
+            res.write(': ping\n\n');  // SSE comment — ignored by client, keeps TCP alive
+        } catch (e) {
+            clearInterval(keepAlive);
+        }
+    }, 20000);
+
+    // Clean up on disconnect
     req.on('close', () => {
+        clearInterval(keepAlive);
         sseClients = sseClients.filter(c => c !== res);
         console.log(`🔌 Virtual Door client disconnected. Total: ${sseClients.length}`);
     });
+});
+
+// REST fallback — lets door.html poll if SSE is unavailable
+app.get('/api/door-status', (req, res) => {
+    res.json(lastDoorEvent || { type: 'LOCKED', timestamp: new Date().toISOString() });
 });
 
 // Simulate scan endpoint — lets the door page trigger a test scan without needing the ESP32

@@ -591,162 +591,176 @@
   </main>
 
   <script>
-    // ── State ──────────────────────────────────────────────────
-    const history = []; // local scan history (newest first)
+    // State
+    const scanHistory = [];
     let lockTimer = null;
+    let sseAlive = false;
+    let lastEventTimestamp = null;
 
-    // ── Elements ───────────────────────────────────────────────
-    const body       = document.body;
-    const sseDot     = document.getElementById('sse-dot');
-    const sseLabel   = document.getElementById('sse-label');
-    const statusBadge = document.getElementById('status-badge');
-    const statusIcon  = document.getElementById('status-icon');
-    const statusText  = document.getElementById('status-text');
+    // Elements
+    const body         = document.body;
+    const sseDot       = document.getElementById('sse-dot');
+    const sseLabel     = document.getElementById('sse-label');
+    const statusIcon   = document.getElementById('status-icon');
+    const statusText   = document.getElementById('status-text');
     const doorLockIcon = document.getElementById('door-lock-icon');
-    const infoName   = document.getElementById('info-name');
-    const infoUID    = document.getElementById('info-uid');
-    const infoTime   = document.getElementById('info-time');
-    const infoRoom   = document.getElementById('info-room');
+    const infoName     = document.getElementById('info-name');
+    const infoUID      = document.getElementById('info-uid');
+    const infoTime     = document.getElementById('info-time');
     const infoRoomText = document.getElementById('info-room-text');
-    const historyList = document.getElementById('history-list');
-    const simInput   = document.getElementById('sim-uid-input');
+    const historyList  = document.getElementById('history-list');
+    const simInput     = document.getElementById('sim-uid-input');
 
-    // ── SSE Connection ─────────────────────────────────────────
+    // SSE Connection (primary transport)
     function connectSSE() {
       const es = new EventSource('/api/door-stream');
 
       es.onopen = () => {
         sseDot.classList.add('live');
         sseLabel.textContent = 'LIVE';
+        sseAlive = true;
       };
 
       es.onmessage = (e) => {
         const payload = JSON.parse(e.data);
-        if (payload.type === 'CONNECTED') return; // heartbeat only
+        if (payload.type === 'CONNECTED') return;
+
+        // Replayed cached state on reconnect: update info card silently,
+        // do NOT trigger the door animation for an old event.
+        if (payload.replayed) {
+          lastEventTimestamp = payload.timestamp;
+          updateInfoCard(payload);
+          return;
+        }
+
+        lastEventTimestamp = payload.timestamp;
         handleDoorEvent(payload);
       };
 
       es.onerror = () => {
+        sseAlive = false;
         sseDot.classList.remove('live');
-        sseLabel.textContent = 'RECONNECTING';
+        sseLabel.textContent = 'POLLING';
         es.close();
-        // Retry after 3 seconds
-        setTimeout(connectSSE, 3000);
+        setTimeout(connectSSE, 5000);
       };
     }
     connectSSE();
 
-    // ── Handle incoming door event ─────────────────────────────
+    // Polling fallback - kicks in when SSE is unavailable.
+    // Checks /api/door-status every 3s and only fires handleDoorEvent
+    // when a genuinely new event is detected (different timestamp).
+    setInterval(async () => {
+      if (sseAlive) return;
+      try {
+        const res  = await fetch('/api/door-status');
+        const data = await res.json();
+        if (!data || data.type === 'LOCKED') return;
+        if (data.timestamp === lastEventTimestamp) return;
+        lastEventTimestamp = data.timestamp;
+        handleDoorEvent(data);
+      } catch (_) {}
+    }, 3000);
+
+    // Animates the door to UNLOCKED or DENIED state.
     function handleDoorEvent(event) {
       const { type, name, uid, room, timestamp } = event;
 
-      // Clear any pending auto-lock timer
       if (lockTimer) clearTimeout(lockTimer);
 
-      // Update body state class
       body.classList.remove('state-locked', 'state-unlocked', 'state-denied');
       body.classList.add(type === 'UNLOCKED' ? 'state-unlocked' : 'state-denied');
 
-      // Status badge
       if (type === 'UNLOCKED') {
-        statusIcon.className = 'fa-solid fa-lock-open status-icon';
+        statusIcon.className   = 'fa-solid fa-lock-open status-icon';
         statusText.textContent = 'DOOR UNLOCKED';
         doorLockIcon.className = 'fa-solid fa-lock-open door-lock-icon';
       } else {
-        statusIcon.className = 'fa-solid fa-triangle-exclamation status-icon';
+        statusIcon.className   = 'fa-solid fa-triangle-exclamation status-icon';
         statusText.textContent = 'ACCESS DENIED';
         doorLockIcon.className = 'fa-solid fa-ban door-lock-icon';
       }
 
-      // Info card
-      infoName.textContent = type === 'UNLOCKED' ? name : 'Unknown Card';
-      infoUID.textContent  = `UID: ${uid}`;
-      infoRoomText.textContent = room || '— —';
+      updateInfoCard(event);
 
-      const t = new Date(timestamp);
-      infoTime.textContent = t.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      if (!scanHistory.length || scanHistory[0].timestamp !== timestamp) {
+        scanHistory.unshift({ type, name, uid, timestamp });
+        if (scanHistory.length > 10) scanHistory.pop();
+        renderHistory();
+      }
 
-      // Add to local history
-      history.unshift({ type, name, uid, timestamp });
-      if (history.length > 10) history.pop();
-      renderHistory();
-
-      // Auto-lock after 3 seconds (same as original servo plan)
+      // Auto-lock after 3 seconds (mirrors original servo plan)
       lockTimer = setTimeout(() => {
         body.classList.remove('state-unlocked', 'state-denied');
         body.classList.add('state-locked');
-        statusIcon.className  = 'fa-solid fa-lock status-icon';
+        statusIcon.className   = 'fa-solid fa-lock status-icon';
         statusText.textContent = 'DOOR LOCKED';
         doorLockIcon.className = 'fa-solid fa-lock door-lock-icon';
       }, 3000);
     }
 
-    // ── History renderer ───────────────────────────────────────
+    // Updates info card text without playing animations.
+    function updateInfoCard({ type, name, uid, room, timestamp }) {
+      infoName.textContent     = type === 'UNLOCKED' ? name : 'Unknown Card';
+      infoUID.textContent      = 'UID: ' + uid;
+      infoRoomText.textContent = room || '— —';
+      const t = new Date(timestamp);
+      infoTime.textContent = t.toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+      });
+    }
+
     function renderHistory() {
-      if (history.length === 0) {
-        historyList.innerHTML = '<div style="text-align:center;padding:24px;font-family:\'JetBrains Mono\',monospace;font-size:10px;color:#2a2a2a;">No scans yet</div>';
+      if (!scanHistory.length) {
+        historyList.innerHTML = '<div style="text-align:center;padding:24px;font-family:JetBrains Mono,monospace;font-size:10px;color:#2a2a2a;">No scans yet</div>';
         return;
       }
-
-      historyList.innerHTML = history.map(h => {
-        const t = new Date(h.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        const isUnlock = h.type === 'UNLOCKED';
-        return `
-          <div class="history-item">
-            <div class="history-item-left">
-              <span class="history-dot ${isUnlock ? 'dot-unlocked' : 'dot-denied'}"></span>
-              <div>
-                <div class="history-name">${isUnlock ? h.name : 'Unknown Card'}</div>
-                <div class="history-uid">${h.uid}</div>
-              </div>
-            </div>
-            <span class="history-time">${t}</span>
-          </div>`;
+      historyList.innerHTML = scanHistory.map(h => {
+        const t = new Date(h.timestamp).toLocaleTimeString('en-US', {
+          hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        });
+        const ok = h.type === 'UNLOCKED';
+        return '<div class="history-item">'
+          + '<div class="history-item-left">'
+          + '<span class="history-dot ' + (ok ? 'dot-unlocked' : 'dot-denied') + '"></span>'
+          + '<div><div class="history-name">' + (ok ? h.name : 'Unknown Card') + '</div>'
+          + '<div class="history-uid">' + h.uid + '</div></div>'
+          + '</div>'
+          + '<span class="history-time">' + t + '</span>'
+          + '</div>';
       }).join('');
     }
 
-    // ── Simulate scan ──────────────────────────────────────────
     async function simulateScan(uid) {
       const scanUID = uid || simInput.value.trim();
       if (!scanUID) {
         simInput.style.borderColor = '#ef4444';
-        setTimeout(() => simInput.style.borderColor = '', 600);
+        setTimeout(() => { simInput.style.borderColor = ''; }, 600);
         return;
       }
-
       simInput.value = '';
-
       try {
-        const res = await fetch('/api/simulate-scan', {
+        await fetch('/api/simulate-scan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: scanUID })
         });
-        const data = await res.json();
-        // SSE will deliver the event — no need to manually update UI here
-        console.log('Simulate result:', data);
       } catch (err) {
         console.error('Simulate scan failed:', err);
       }
     }
 
-    // Allow pressing Enter in the UID input
-    simInput.addEventListener('keydown', e => { if (e.key === 'Enter') simulateScan(); });
+    simInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') simulateScan(); });
 
-    // ── Load presets from recent RFID logs ─────────────────────
     async function loadPresets() {
       try {
         const res  = await fetch('/api/logs');
         const logs = await res.json();
-
-        // Extract unique UIDs that were successful (UNLOCKED)
-        const seen   = new Set();
+        const seen = new Set();
         const presets = [];
-
         for (const log of logs) {
           if (log.status === 'UNLOCKED' && log.triggeredBy && !seen.has(log.triggeredBy)) {
             seen.add(log.triggeredBy);
-            // Use name as preset label — we don't store UID in Activity, so just show name
             presets.push({ label: log.triggeredBy, type: 'known' });
           } else if (log.status === 'ALARM_INTRUDER' && !seen.has('unknown')) {
             seen.add('unknown');
@@ -754,21 +768,17 @@
           }
           if (presets.length >= 4) break;
         }
-
-        if (presets.length === 0) {
-          document.getElementById('sim-presets').innerHTML =
-            '<span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#2a2a2a;">No recent scans to preset</span>';
+        const presetsEl = document.getElementById('sim-presets');
+        if (!presets.length) {
+          presetsEl.innerHTML = '<span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#2a2a2a;">No recent scans to preset</span>';
           return;
         }
-
-        document.getElementById('sim-presets').innerHTML = presets.map(p => {
+        presetsEl.innerHTML = presets.map(p => {
           if (p.type === 'unknown') {
-            return `<span class="preset-chip" onclick="simulateScan('DEADBEEF')" title="Simulate unknown card">⛔ Unknown</span>`;
+            return '<span class="preset-chip" onclick="simulateScan('DEADBEEF')">&#x26D4; Unknown</span>';
           }
-          // For known students we need their UID — fetch from /api/students if available, else ask user to enter manually
-          return `<span class="preset-chip" style="cursor:default;" title="Enter the UID of ${p.label} manually">✅ ${p.label}</span>`;
+          return '<span class="preset-chip" style="cursor:default;">&#x2705; ' + p.label + '</span>';
         }).join('');
-
       } catch (_) {
         document.getElementById('sim-presets').innerHTML =
           '<span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#2a2a2a;">Could not load presets</span>';
