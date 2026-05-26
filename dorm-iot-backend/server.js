@@ -27,11 +27,11 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-function sendNotificationEmail(studentName, roomNumber) {
+function sendNotificationEmail(studentName, roomNumber, parentEmail) {
     const currentTime = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: process.env.PARENT_EMAIL,
+        to: parentEmail,
         subject: `🚨 [平安回宿通知] ${studentName} 已安全抵達宿舍`,
         text: `您好：\n\n您的孩子 ${studentName} 已於 ${currentTime} 順利刷卡返回宿舍 (${roomNumber})。\n\n此訊息由 RFID 智慧宿舍生活系統自動發送。`
     };
@@ -63,7 +63,7 @@ mqttClient.on('message', async (topic, message) => {
 
             if (student) {
                 console.log(`✅ Access Granted: User verified as ${student.name}`);
-                sendNotificationEmail(student.name, student.room);
+                sendNotificationEmail(student.name, student.room, student.parentEmail);
             } else {
                 console.log(`❌ Access Denied: Unknown UID ${scannedUID}`);
             }

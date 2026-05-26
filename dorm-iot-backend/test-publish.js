@@ -2,7 +2,7 @@ const mqtt = require('mqtt');
 
 const MQTT_BROKER = 'mqtt://broker.hivemq.com';
 const TOPIC = 'home/door/rfid';
-const SCANNED_UID = '3A7F2B8C';
+const SCANNED_UID = '0475539A327680';
 
 console.log(`📡 Connecting to ${MQTT_BROKER}...`);
 const client = mqtt.connect(MQTT_BROKER);

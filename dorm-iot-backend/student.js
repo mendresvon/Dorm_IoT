@@ -10,11 +10,18 @@ const studentSchema = new mongoose.Schema({
     },
     name: { 
         type: String, 
-        required: true 
+        required: true,
+        trim: true
     },
     room: { 
         type: String, 
-        required: true 
+        required: true,
+        trim: true
+    },
+    parentEmail: { 
+        type: String, 
+        required: true,
+        trim: true
     }
 }, { timestamps: true });
 

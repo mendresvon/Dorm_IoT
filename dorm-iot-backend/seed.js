@@ -4,9 +4,16 @@ const Student = require('./student');
 
 const seedData = [
     {
-        uid: '3A7F2B8C',
+        uid: '0475539A327680',
         name: '馬盛中',
-        room: 'Dorm 403'
+        room: 'Dorm 403',
+        parentEmail: 'mendresvon2@gmail.com'
+    },
+    {
+        uid: '366DCB06',
+        name: 'Roommate B',
+        room: 'Dorm 403',
+        parentEmail: '4b1yz001@stust.edu.tw'
     }
 ];
 
