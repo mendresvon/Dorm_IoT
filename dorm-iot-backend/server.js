@@ -11,6 +11,9 @@ app.use(express.json());
 app.use(express.static('public'));
 const PORT = process.env.PORT || 8080;
 
+// SSE client registry — keeps track of all door page connections
+let sseClients = [];
+
 // ----------------------------------------------------
 // 1. DATABASE CONNECTIVITY (Replaces hardcoded object)
 // ----------------------------------------------------
@@ -79,6 +82,9 @@ mqttClient.on('message', async (topic, message, packet) => {
                     eventType: "RFID Swipe",
                     triggeredBy: student.name
                 });
+
+                // Push real-time event to all Virtual Door SSE clients
+                broadcastDoorEvent({ type: 'UNLOCKED', name: student.name, uid: scannedUID, room: student.room, timestamp: new Date().toISOString() });
             } else {
                 console.log(`❌ Access Denied: Unknown UID ${scannedUID}`);
                 
@@ -88,6 +94,9 @@ mqttClient.on('message', async (topic, message, packet) => {
                     eventType: "RFID Swipe",
                     triggeredBy: `Unknown Token (${scannedUID})`
                 });
+
+                // Push denial event to all Virtual Door SSE clients
+                broadcastDoorEvent({ type: 'DENIED', name: 'Unknown', uid: scannedUID, room: null, timestamp: new Date().toISOString() });
             }
         } catch (err) {
             console.error('❌ Database logging error:', err);
@@ -96,8 +105,68 @@ mqttClient.on('message', async (topic, message, packet) => {
 });
 
 // ----------------------------------------------------
-// 4. HTTP ENDPOINTS
+// 4. SSE HELPER — Broadcasts door events to all connected clients
 // ----------------------------------------------------
+function broadcastDoorEvent(payload) {
+    const data = `data: ${JSON.stringify(payload)}\n\n`;
+    sseClients.forEach(res => {
+        try { res.write(data); } catch (e) { /* stale client — will be cleaned up on close */ }
+    });
+    console.log(`📡 SSE broadcast → ${payload.type} for ${payload.name} (${payload.uid}), clients: ${sseClients.length}`);
+}
+
+// ----------------------------------------------------
+// 5. HTTP ENDPOINTS
+// ----------------------------------------------------
+
+// Server-Sent Events endpoint for the Virtual Door page
+app.get('/api/door-stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering on Cloud Run
+    res.flushHeaders();
+
+    // Send a heartbeat immediately to confirm connection
+    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', timestamp: new Date().toISOString() })}\n\n`);
+
+    sseClients.push(res);
+    console.log(`🔌 Virtual Door client connected. Total: ${sseClients.length}`);
+
+    // Remove client when connection closes
+    req.on('close', () => {
+        sseClients = sseClients.filter(c => c !== res);
+        console.log(`🔌 Virtual Door client disconnected. Total: ${sseClients.length}`);
+    });
+});
+
+// Simulate scan endpoint — lets the door page trigger a test scan without needing the ESP32
+app.post('/api/simulate-scan', async (req, res) => {
+    const { uid } = req.body;
+    if (!uid) return res.status(400).json({ error: 'uid is required' });
+
+    const scannedUID = uid.trim().toUpperCase();
+    console.log(`🧪 Simulated scan: UID ${scannedUID}`);
+
+    try {
+        const student = await Student.findOne({ uid: scannedUID });
+        if (student) {
+            await Activity.create({ status: 'UNLOCKED', eventType: 'Simulated Scan', triggeredBy: student.name });
+            broadcastDoorEvent({ type: 'UNLOCKED', name: student.name, uid: scannedUID, room: student.room, timestamp: new Date().toISOString() });
+            res.json({ result: 'UNLOCKED', name: student.name });
+        } else {
+            await Activity.create({ status: 'ALARM_INTRUDER', eventType: 'Simulated Scan', triggeredBy: `Unknown Token (${scannedUID})` });
+            broadcastDoorEvent({ type: 'DENIED', name: 'Unknown', uid: scannedUID, room: null, timestamp: new Date().toISOString() });
+            res.json({ result: 'DENIED', uid: scannedUID });
+        }
+    } catch (err) {
+        console.error('❌ Simulate scan error:', err);
+        res.status(500).json({ error: 'Simulation failed' });
+    }
+});
+
+// ----------------------------------------------------
+// (continued)
 app.post('/api/lights', async (req, res) => {
     const { scene, brightness, triggerSource, spokenText, color, effect, speed } = req.body;
     console.log(`📱 App Command Received -> Scene: ${scene}, Brightness: ${brightness}, Color: ${color || 'N/A'}, Effect: ${effect || 'N/A'}`);

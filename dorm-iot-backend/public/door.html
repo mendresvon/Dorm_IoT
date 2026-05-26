@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Door — Smart RFID Dormitory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --locked-glow:  rgba(239, 68,  68,  0.15);
+      --unlocked-glow: rgba(34, 197, 94,  0.18);
+      --denied-glow:  rgba(239, 68,  68,  0.35);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #050505;
+      color: #e5e5e5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient orb ──────────────────────────── */
+    .ambient-orb {
+      position: fixed;
+      top: -10vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60vw;
+      height: 40vh;
+      border-radius: 50%;
+      background: var(--locked-glow);
+      filter: blur(80px);
+      pointer-events: none;
+      transition: background 0.8s ease;
+      z-index: 0;
+    }
+    body.state-unlocked .ambient-orb { background: var(--unlocked-glow); }
+    body.state-denied   .ambient-orb { background: var(--denied-glow);   }
+
+    /* ── Layout ───────────────────────────────── */
+    header {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 480px;
+      padding: 32px 24px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #737373;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .back-btn:hover { color: #e5e5e5; }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #525252;
+    }
+
+    .sse-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      transition: background 0.4s;
+    }
+    .sse-dot.live { background: #22c55e; animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 480px;
+      padding: 32px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    /* ── Status label ─────────────────────────── */
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      border: 1px solid #1f1f1f;
+      background: #0d0d0d;
+      color: #737373;
+      transition: all 0.4s ease;
+    }
+    .status-icon { font-size: 10px; }
+
+    body.state-unlocked .status-badge {
+      background: rgba(34,197,94,0.08);
+      border-color: rgba(34,197,94,0.25);
+      color: #4ade80;
+    }
+    body.state-denied .status-badge {
+      background: rgba(239,68,68,0.08);
+      border-color: rgba(239,68,68,0.25);
+      color: #f87171;
+    }
+    body.state-locked .status-badge {
+      background: rgba(239,68,68,0.04);
+      border-color: rgba(239,68,68,0.15);
+      color: #f87171;
+    }
+
+    /* ── Door scene ───────────────────────────── */
+    .door-scene {
+      perspective: 1000px;
+      width: 200px;
+      height: 300px;
+      position: relative;
+    }
+
+    /* Door frame */
+    .door-frame {
+      position: absolute;
+      inset: 0;
+      border: 3px solid #2a2a2a;
+      border-radius: 6px 6px 0 0;
+      background: #0a0a0a;
+      box-shadow: inset 0 0 0 6px #111111, 0 0 60px rgba(0,0,0,0.8);
+    }
+
+    /* Floor line */
+    .door-frame::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: -20px;
+      right: -20px;
+      height: 3px;
+      background: #1f1f1f;
+      border-radius: 2px;
+    }
+
+    /* The door leaf — this is what rotates */
+    .door-leaf {
+      position: absolute;
+      inset: 4px;
+      background: linear-gradient(135deg, #1c1c1c 0%, #161616 40%, #111111 100%);
+      border-radius: 4px 4px 0 0;
+      transform-origin: left center;
+      transform: rotateY(0deg);
+      transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid #2a2a2a;
+      will-change: transform;
+    }
+
+    body.state-unlocked .door-leaf {
+      transform: rotateY(-75deg);
+    }
+
+    /* Door panels (decorative insets) */
+    .door-panel {
+      position: absolute;
+      border: 1px solid #252525;
+      border-radius: 3px;
+      background: #141414;
+    }
+    .door-panel.top    { top: 20px; left: 16px; right: 16px; height: 80px; }
+    .door-panel.bottom { bottom: 30px; left: 16px; right: 16px; height: 100px; }
+
+    /* Door handle */
+    .door-handle-group {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .door-knob {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #d4af37, #a0892a);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      border: 1px solid #8a7020;
+    }
+    .door-handle {
+      width: 8px;
+      height: 28px;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #d4af37 0%, #a0892a 100%);
+      border: 1px solid #8a7020;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Lock icon on the door */
+    .door-lock-icon {
+      position: absolute;
+      right: 22px;
+      bottom: 80px;
+      font-size: 12px;
+      color: #d4af37;
+      opacity: 0.6;
+      transition: opacity 0.4s, color 0.4s;
+    }
+    body.state-unlocked .door-lock-icon { color: #4ade80; opacity: 0.9; }
+    body.state-denied   .door-lock-icon { color: #f87171; opacity: 1; }
+
+    /* Door inner (visible when open) */
+    .door-interior {
+      position: absolute;
+      inset: 4px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(135deg, #0f1a12 0%, #0a1410 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.4s 0.3s;
+    }
+    body.state-unlocked .door-interior { opacity: 1; }
+
+    .door-interior-glow {
+      width: 60px; height: 100px;
+      background: radial-gradient(ellipse, rgba(34,197,94,0.2), transparent 70%);
+      border-radius: 50%;
+    }
+
+    /* Denied shake animation */
+    @keyframes shake {
+      0%,100% { transform: rotateY(0deg); }
+      15%      { transform: rotateY(-8deg); }
+      30%      { transform: rotateY(6deg); }
+      45%      { transform: rotateY(-6deg); }
+      60%      { transform: rotateY(4deg); }
+      75%      { transform: rotateY(-3deg); }
+      90%      { transform: rotateY(2deg); }
+    }
+    body.state-denied .door-leaf {
+      animation: shake 0.6s ease-in-out;
+      border-color: rgba(239,68,68,0.3);
+    }
+
+    /* Lock glow ring around the frame */
+    .door-glow {
+      position: absolute;
+      inset: -8px;
+      border-radius: 10px;
+      pointer-events: none;
+      transition: box-shadow 0.6s ease;
+      box-shadow: 0 0 0px rgba(239,68,68,0);
+    }
+    body.state-locked   .door-glow { box-shadow: 0 0 30px rgba(239,68,68,0.12); }
+    body.state-unlocked .door-glow { box-shadow: 0 0 40px rgba(34,197,94,0.25); }
+    body.state-denied   .door-glow { box-shadow: 0 0 50px rgba(239,68,68,0.40); }
+
+    /* ── Info card ────────────────────────────── */
+    .info-card {
+      width: 100%;
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color 0.4s;
+    }
+    body.state-unlocked .info-card { border-color: rgba(34,197,94,0.2); }
+    body.state-denied   .info-card { border-color: rgba(239,68,68,0.2); }
+
+    .info-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #404040;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .info-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f5f5f5;
+      letter-spacing: -0.02em;
+      transition: color 0.4s;
+    }
+    body.state-unlocked .info-name { color: #4ade80; }
+    body.state-denied   .info-name { color: #f87171; }
+
+    .info-uid {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #404040;
+      letter-spacing: 0.12em;
+    }
+    body.state-unlocked .info-uid { color: rgba(74,222,128,0.5); }
+    body.state-denied   .info-uid { color: rgba(248,113,113,0.5); }
+
+    .info-room-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #111;
+      border: 1px solid #1f1f1f;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #525252;
+      letter-spacing: 0.1em;
+      transition: all 0.4s;
+    }
+    body.state-unlocked .info-room-badge {
+      border-color: rgba(34,197,94,0.2);
+      color: rgba(74,222,128,0.7);
+    }
+
+    .info-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #404040;
+    }
+
+    /* ── Simulate panel ───────────────────────── */
+    .simulate-panel {
+      width: 100%;
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sim-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #404040;
+    }
+
+    .sim-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .sim-input {
+      flex: 1;
+      background: #111;
+      border: 1px solid #262626;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #d4d4d4;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .sim-input::placeholder { color: #3f3f3f; }
+    .sim-input:focus { border-color: #404040; }
+
+    .sim-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid #262626;
+      background: #161616;
+      color: #a3a3a3;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .sim-btn:hover { border-color: #3f3f3f; color: #e5e5e5; }
+    .sim-btn:active { transform: scale(0.97); }
+
+    .sim-presets {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .preset-chip {
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid #1f1f1f;
+      background: #111;
+      color: #525252;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-chip:hover { border-color: #3f3f3f; color: #d4d4d4; }
+
+    /* ── Scan history ─────────────────────────── */
+    .history-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #0a0a0a;
+      border: 1px solid #141414;
+      font-size: 11px;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-item-left { display: flex; align-items: center; gap: 10px; }
+
+    .history-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-unlocked { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+    .dot-denied   { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+
+    .history-name {
+      font-weight: 600;
+      color: #d4d4d4;
+      font-size: 11px;
+    }
+    .history-uid {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #404040;
+    }
+    .history-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #3a3a3a;
+    }
+  </style>
+</head>
+<body class="state-locked">
+
+  <div class="ambient-orb"></div>
+
+  <header>
+    <a href="/" class="back-btn">
+      <i class="fa-solid fa-chevron-left"></i> Dashboard
+    </a>
+    <div class="header-badge">
+      <span class="sse-dot" id="sse-dot"></span>
+      <span id="sse-label">CONNECTING</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Status badge -->
+    <div class="status-badge" id="status-badge">
+      <i class="fa-solid fa-lock status-icon" id="status-icon"></i>
+      <span id="status-text">DOOR LOCKED</span>
+    </div>
+
+    <!-- Door scene -->
+    <div class="door-scene">
+      <div class="door-glow"></div>
+      <div class="door-frame">
+        <div class="door-interior">
+          <div class="door-interior-glow"></div>
+        </div>
+        <div class="door-leaf">
+          <div class="door-panel top"></div>
+          <div class="door-panel bottom"></div>
+          <div class="door-handle-group">
+            <div class="door-knob"></div>
+            <div class="door-handle"></div>
+          </div>
+          <i class="fa-solid fa-lock door-lock-icon" id="door-lock-icon"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div class="info-card" id="info-card">
+      <span class="info-label">Last Event</span>
+      <div>
+        <div class="info-row" style="margin-bottom:6px;">
+          <span class="info-name" id="info-name">Waiting for scan…</span>
+          <div class="info-room-badge" id="info-room">
+            <i class="fa-solid fa-door-closed" style="font-size:8px;"></i>
+            <span id="info-room-text">— —</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-uid" id="info-uid">UID: — — — —</span>
+          <span class="info-time" id="info-time">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simulate panel -->
+    <div class="simulate-panel">
+      <span class="sim-title"><i class="fa-solid fa-flask-vial" style="margin-right:6px;"></i>Simulate RFID Scan</span>
+      <div class="sim-row">
+        <input type="text" class="sim-input" id="sim-uid-input" placeholder="Enter UID e.g. A3F20B91" maxlength="20">
+        <button class="sim-btn" onclick="simulateScan()">
+          <i class="fa-solid fa-id-card" style="margin-right:4px;"></i>SCAN
+        </button>
+      </div>
+      <div class="sim-presets" id="sim-presets">
+        <!-- Populated dynamically from /api/logs -->
+        <span class="preset-chip" style="color:#3a3a3a;cursor:default;">loading presets…</span>
+      </div>
+    </div>
+
+    <!-- Scan history -->
+    <div style="width:100%">
+      <span style="display:block;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#404040;">
+        <i class="fa-solid fa-clock-rotate-left" style="margin-right:6px;"></i>Recent Scans
+      </span>
+      <div class="history-list" id="history-list">
+        <div style="text-align:center;padding:24px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#2a2a2a;">
+          No scans yet
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────
+    const history = []; // local scan history (newest first)
+    let lockTimer = null;
+
+    // ── Elements ───────────────────────────────────────────────
+    const body       = document.body;
+    const sseDot     = document.getElementById('sse-dot');
+    const sseLabel   = document.getElementById('sse-label');
+    const statusBadge = document.getElementById('status-badge');
+    const statusIcon  = document.getElementById('status-icon');
+    const statusText  = document.getElementById('status-text');
+    const doorLockIcon = document.getElementById('door-lock-icon');
+    const infoName   = document.getElementById('info-name');
+    const infoUID    = document.getElementById('info-uid');
+    const infoTime   = document.getElementById('info-time');
+    const infoRoom   = document.getElementById('info-room');
+    const infoRoomText = document.getElementById('info-room-text');
+    const historyList = document.getElementById('history-list');
+    const simInput   = document.getElementById('sim-uid-input');
+
+    // ── SSE Connection ─────────────────────────────────────────
+    function connectSSE() {
+      const es = new EventSource('/api/door-stream');
+
+      es.onopen = () => {
+        sseDot.classList.add('live');
+        sseLabel.textContent = 'LIVE';
+      };
+
+      es.onmessage = (e) => {
+        const payload = JSON.parse(e.data);
+        if (payload.type === 'CONNECTED') return; // heartbeat only
+        handleDoorEvent(payload);
+      };
+
+      es.onerror = () => {
+        sseDot.classList.remove('live');
+        sseLabel.textContent = 'RECONNECTING';
+        es.close();
+        // Retry after 3 seconds
+        setTimeout(connectSSE, 3000);
+      };
+    }
+    connectSSE();
+
+    // ── Handle incoming door event ─────────────────────────────
+    function handleDoorEvent(event) {
+      const { type, name, uid, room, timestamp } = event;
+
+      // Clear any pending auto-lock timer
+      if (lockTimer) clearTimeout(lockTimer);
+
+      // Update body state class
+      body.classList.remove('state-locked', 'state-unlocked', 'state-denied');
+      body.classList.add(type === 'UNLOCKED' ? 'state-unlocked' : 'state-denied');
+
+      // Status badge
+      if (type === 'UNLOCKED') {
+        statusIcon.className = 'fa-solid fa-lock-open status-icon';
+        statusText.textContent = 'DOOR UNLOCKED';
+        doorLockIcon.className = 'fa-solid fa-lock-open door-lock-icon';
+      } else {
+        statusIcon.className = 'fa-solid fa-triangle-exclamation status-icon';
+        statusText.textContent = 'ACCESS DENIED';
+        doorLockIcon.className = 'fa-solid fa-ban door-lock-icon';
+      }
+
+      // Info card
+      infoName.textContent = type === 'UNLOCKED' ? name : 'Unknown Card';
+      infoUID.textContent  = `UID: ${uid}`;
+      infoRoomText.textContent = room || '— —';
+
+      const t = new Date(timestamp);
+      infoTime.textContent = t.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+      // Add to local history
+      history.unshift({ type, name, uid, timestamp });
+      if (history.length > 10) history.pop();
+      renderHistory();
+
+      // Auto-lock after 3 seconds (same as original servo plan)
+      lockTimer = setTimeout(() => {
+        body.classList.remove('state-unlocked', 'state-denied');
+        body.classList.add('state-locked');
+        statusIcon.className  = 'fa-solid fa-lock status-icon';
+        statusText.textContent = 'DOOR LOCKED';
+        doorLockIcon.className = 'fa-solid fa-lock door-lock-icon';
+      }, 3000);
+    }
+
+    // ── History renderer ───────────────────────────────────────
+    function renderHistory() {
+      if (history.length === 0) {
+        historyList.innerHTML = '<div style="text-align:center;padding:24px;font-family:\'JetBrains Mono\',monospace;font-size:10px;color:#2a2a2a;">No scans yet</div>';
+        return;
+      }
+
+      historyList.innerHTML = history.map(h => {
+        const t = new Date(h.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        const isUnlock = h.type === 'UNLOCKED';
+        return `
+          <div class="history-item">
+            <div class="history-item-left">
+              <span class="history-dot ${isUnlock ? 'dot-unlocked' : 'dot-denied'}"></span>
+              <div>
+                <div class="history-name">${isUnlock ? h.name : 'Unknown Card'}</div>
+                <div class="history-uid">${h.uid}</div>
+              </div>
+            </div>
+            <span class="history-time">${t}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Simulate scan ──────────────────────────────────────────
+    async function simulateScan(uid) {
+      const scanUID = uid || simInput.value.trim();
+      if (!scanUID) {
+        simInput.style.borderColor = '#ef4444';
+        setTimeout(() => simInput.style.borderColor = '', 600);
+        return;
+      }
+
+      simInput.value = '';
+
+      try {
+        const res = await fetch('/api/simulate-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: scanUID })
+        });
+        const data = await res.json();
+        // SSE will deliver the event — no need to manually update UI here
+        console.log('Simulate result:', data);
+      } catch (err) {
+        console.error('Simulate scan failed:', err);
+      }
+    }
+
+    // Allow pressing Enter in the UID input
+    simInput.addEventListener('keydown', e => { if (e.key === 'Enter') simulateScan(); });
+
+    // ── Load presets from recent RFID logs ─────────────────────
+    async function loadPresets() {
+      try {
+        const res  = await fetch('/api/logs');
+        const logs = await res.json();
+
+        // Extract unique UIDs that were successful (UNLOCKED)
+        const seen   = new Set();
+        const presets = [];
+
+        for (const log of logs) {
+          if (log.status === 'UNLOCKED' && log.triggeredBy && !seen.has(log.triggeredBy)) {
+            seen.add(log.triggeredBy);
+            // Use name as preset label — we don't store UID in Activity, so just show name
+            presets.push({ label: log.triggeredBy, type: 'known' });
+          } else if (log.status === 'ALARM_INTRUDER' && !seen.has('unknown')) {
+            seen.add('unknown');
+            presets.push({ label: 'Unknown Card', uid: 'DEADBEEF', type: 'unknown' });
+          }
+          if (presets.length >= 4) break;
+        }
+
+        if (presets.length === 0) {
+          document.getElementById('sim-presets').innerHTML =
+            '<span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#2a2a2a;">No recent scans to preset</span>';
+          return;
+        }
+
+        document.getElementById('sim-presets').innerHTML = presets.map(p => {
+          if (p.type === 'unknown') {
+            return `<span class="preset-chip" onclick="simulateScan('DEADBEEF')" title="Simulate unknown card">⛔ Unknown</span>`;
+          }
+          // For known students we need their UID — fetch from /api/students if available, else ask user to enter manually
+          return `<span class="preset-chip" style="cursor:default;" title="Enter the UID of ${p.label} manually">✅ ${p.label}</span>`;
+        }).join('');
+
+      } catch (_) {
+        document.getElementById('sim-presets').innerHTML =
+          '<span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#2a2a2a;">Could not load presets</span>';
+      }
+    }
+    loadPresets();
+  </script>
+</body>
+</html>
