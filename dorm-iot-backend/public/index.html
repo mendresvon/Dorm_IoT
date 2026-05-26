@@ -8,36 +8,38 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Font and Icons -->
+  <!-- Google Fonts: Inter & JetBrains Mono for a hyper-clean developer aesthetic -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#8b5cf6">
+  <meta name="theme-color" content="#000000">
   
   <style>
     body {
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
     }
-    .glass-card {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .luxury-panel {
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
     }
     .pulsing-mic {
-      box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
-      animation: pulse 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+      box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+      animation: pulse 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
     }
     @keyframes pulse {
       to {
-        box-shadow: 0 0 0 25px rgba(139, 92, 246, 0);
+        box-shadow: 0 0 0 30px rgba(244, 63, 94, 0);
       }
     }
-    /* Hide scrollbar */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -45,166 +47,154 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    /* Elegant Custom Range Slider */
+    input[type=range]::-webkit-slider-thumb {
+      background: #ffffff;
+      border: 2px solid #000000;
+      height: 20px;
+      width: 20px;
+      border-radius: 9999px;
+      cursor: pointer;
+      margin-top: -6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      transition: all 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      background: #1f1f1f;
+      height: 8px;
+      border-radius: 9999px;
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-full flex flex-col relative overflow-x-hidden selection:bg-violet-500 selection:text-white">
+<body class="text-neutral-200 min-h-full flex flex-col relative overflow-x-hidden selection:bg-neutral-800 selection:text-white">
   
-  <!-- Ambient background glow elements -->
-  <div class="absolute top-[-10%] left-[-20%] w-[80vw] h-[80vw] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none z-0"></div>
-  <div class="absolute bottom-[-10%] right-[-20%] w-[80vw] h-[80vw] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none z-0"></div>
+  <!-- Subtle top ambient light -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[70vw] h-[15vh] rounded-full bg-rose-500/5 blur-[90px] pointer-events-none z-0"></div>
 
   <!-- Header -->
-  <header class="relative z-10 w-full px-6 pt-6 pb-2 max-w-md mx-auto">
-    <div class="flex items-center justify-between">
+  <header class="relative z-10 w-full px-6 pt-8 pb-3 max-w-md mx-auto">
+    <div class="flex items-end justify-between border-b border-neutral-900 pb-4">
       <div>
-        <h1 class="text-2xl font-extrabold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">DORM ECOSYSTEM</h1>
-        <p class="text-xs text-slate-400 font-medium mt-0.5">🇹🇼 Dynamic Low-Latency Client</p>
+        <h1 class="text-sm font-bold tracking-[0.2em] text-white uppercase font-mono">DORM SYSTEM</h1>
+        <p class="text-[10px] text-neutral-500 font-semibold tracking-wider uppercase mt-1">🇹🇼 Dynamic Client • Active Capping</p>
       </div>
-      <div id="connection-badge" class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 shadow-lg shadow-emerald-500/5 transition-all">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Connected
+      <div id="connection-badge" class="px-2.5 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-neutral-400 border border-neutral-800/80 flex items-center gap-1.5 transition-all">
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> SYSTEM OK
       </div>
     </div>
   </header>
 
   <!-- Main Container -->
-  <main class="flex-1 w-full max-w-md mx-auto px-5 pb-24 relative z-10 flex flex-col gap-6">
+  <main class="flex-1 w-full max-w-md mx-auto px-6 pb-24 relative z-10 flex flex-col gap-5">
 
-    <!-- Speech recognition section -->
-    <div class="glass-card rounded-3xl p-6 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 hover:border-slate-700/50 shadow-2xl">
-      <div class="text-center mb-4">
-        <h3 class="text-sm font-semibold tracking-wider text-slate-400 uppercase">English Voice Control</h3>
-        <p id="mic-status" class="text-xs text-slate-500 mt-1">Tap below and speak commands clearly</p>
+    <!-- Voice Control Panel -->
+    <div class="luxury-panel rounded-2xl p-6 flex flex-col items-center justify-center relative transition-all duration-300">
+      <span class="absolute top-4 left-4 text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase">VOICE CONTROLLER</span>
+      
+      <div class="text-center mt-4 mb-5">
+        <p id="mic-status" class="text-[10px] text-neutral-400 font-medium tracking-wide">Tap and speak commands clearly</p>
       </div>
       
-      <!-- Microphone Button -->
-      <button id="mic-btn" class="w-24 h-24 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-600 flex items-center justify-center text-white text-3xl shadow-xl shadow-violet-600/25 transition-all active:scale-95 duration-200 focus:outline-none">
+      <!-- Microphone Circular Controller -->
+      <button id="mic-btn" class="w-20 h-20 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 text-2xl shadow-inner transition-all active:scale-95 duration-200 focus:outline-none hover:text-white hover:border-neutral-700">
         <i class="fa-solid fa-microphone" id="mic-icon"></i>
       </button>
 
-      <div class="mt-4 w-full text-center">
-        <div id="speech-bubble" class="hidden glass-card rounded-2xl px-4 py-2 text-sm text-slate-300 italic border-violet-500/20 inline-block max-w-xs shadow-md">
+      <div class="mt-4 min-h-[32px] flex items-center justify-center">
+        <div id="speech-bubble" class="hidden text-xs font-mono text-rose-500 tracking-wide">
           "Listening..."
         </div>
       </div>
     </div>
 
-    <!-- Voice Commands Reference -->
-    <div class="glass-card rounded-3xl p-4 shadow-xl transition-all duration-300 hover:border-slate-800">
-      <details class="group focus:outline-none">
-        <summary class="flex justify-between items-center font-bold text-xs tracking-wider text-slate-400 uppercase cursor-pointer list-none focus:outline-none select-none">
-          <span><i class="fa-solid fa-circle-question text-violet-400 mr-1.5"></i> Voice Commands Cheat Sheet</span>
-          <span class="transition group-open:rotate-180">
-            <i class="fa-solid fa-chevron-down text-slate-500"></i>
-          </span>
-        </summary>
-        <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex flex-col gap-2">
-          <div class="flex justify-between border-b border-slate-900 pb-1.5">
-            <span class="font-bold text-slate-300">"on" / "turn on" / "study mode"</span>
-            <span class="text-emerald-400 font-semibold">Power ON (100%)</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-900 pb-1.5">
-            <span class="font-bold text-slate-300">"off" / "turn off" / "kill"</span>
-            <span class="text-rose-400 font-semibold">Power OFF</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-900 pb-1.5">
-            <span class="font-bold text-slate-300">"rainbow" / "party"</span>
-            <span class="text-violet-400 font-semibold">Rainbow Effect</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-900 pb-1.5">
-            <span class="font-bold text-slate-300">"breathe" / "breathing"</span>
-            <span class="text-cyan-400 font-semibold">Breathing Pulse</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-900 pb-1.5">
-            <span class="font-bold text-slate-300">"disco" / "disco lights"</span>
-            <span class="text-fuchsia-400 font-semibold">🕺 Disco Flash</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="font-bold text-slate-300">"[color name]" (e.g., "red", "blue")</span>
-            <span class="text-yellow-400 font-semibold">Change Color</span>
-          </div>
-        </div>
-      </details>
-    </div>
-
-    <!-- System Power Control -->
-    <div class="glass-card rounded-3xl p-5 flex flex-col gap-3 shadow-xl">
-      <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1"><i class="fa-solid fa-power-off text-violet-400 mr-1.5"></i> System Power</h3>
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="sendCommand('ON')" class="py-3.5 px-4 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-emerald-600/15 transition-all hover:brightness-110 active:scale-95 duration-200">
-          <i class="fa-solid fa-circle-play mr-1.5"></i> Power ON
+    <!-- Power & Bedtime Controls -->
+    <div class="luxury-panel rounded-2xl p-5 flex flex-col gap-3">
+      <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase mb-1">SYSTEM POWER</span>
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="sendCommand('ON', 85)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
+          POWER ON
         </button>
-        <button onclick="sendCommand('OFF')" class="py-3.5 px-4 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-rose-600/15 transition-all hover:brightness-110 active:scale-95 duration-200">
-          <i class="fa-solid fa-circle-stop mr-1.5"></i> Power OFF
+        <button onclick="sendCommand('OFF', 0)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-850 text-neutral-400 hover:text-rose-500 font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-rose-950">
+          POWER OFF
+        </button>
+        <button onclick="sendCommand('BEDTIME', 15)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-800 text-amber-500/90 font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-amber-900/50">
+          <i class="fa-solid fa-moon mr-1 text-[10px]"></i> BEDTIME
         </button>
       </div>
     </div>
 
-    <!-- Brightness Controller -->
-    <div class="glass-card rounded-3xl p-5 shadow-xl">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase"><i class="fa-solid fa-sliders text-cyan-400 mr-1.5"></i> Light Intensity</h3>
-        <span id="brightness-display" class="text-sm font-extrabold text-cyan-400">80%</span>
+    <!-- Capped Brightness Intensity Slider -->
+    <div class="luxury-panel rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3.5">
+        <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase">INTENSITY (CAPPED AT 85%)</span>
+        <span id="brightness-display" class="text-xs font-mono font-bold text-white">80%</span>
       </div>
-      <input type="range" id="brightness-slider" min="0" max="100" value="80" 
-        class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 outline-none transition-all">
+      <!-- Max slider cap is 85% to protect hardware -->
+      <input type="range" id="brightness-slider" min="0" max="85" value="80" 
+        class="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer outline-none transition-all">
     </div>
 
-    <!-- Effects and Colors -->
-    <div class="glass-card rounded-3xl p-5 flex flex-col gap-4 shadow-xl">
+    <!-- Modes Grid -->
+    <div class="luxury-panel rounded-2xl p-5 flex flex-col gap-4">
       <div>
-        <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3"><i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400 mr-1.5"></i> Animation Modes</h3>
-        <div class="grid grid-cols-3 gap-2">
-          <button onclick="sendCommand('RAINBOW')" class="p-2.5 rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 font-semibold text-[10px] tracking-wide transition-all active:scale-95 duration-200">
+        <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase mb-3 block">MODES</span>
+        <div class="grid grid-cols-3 gap-2.5">
+          <button onclick="sendCommand('RAINBOW')" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
             🌈 Rainbow
           </button>
-          <button onclick="sendCommand('BREATHE')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-900 text-slate-300 font-semibold text-[10px] tracking-wide transition-all active:scale-95 duration-200">
-            🌬️ Breathe
+          <button onclick="sendCommand('PARTY')" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
+            🕺 Party
           </button>
-          <button onclick="sendCommand('DISCO')" class="p-2.5 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-300 hover:bg-fuchsia-500/20 font-semibold text-[10px] tracking-wide transition-all active:scale-95 duration-200">
-            🕺 Disco
+          <button id="breathe-btn" onclick="triggerBreathing()" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
+            🌬️ Breathe
           </button>
         </div>
       </div>
 
-      <div class="border-t border-slate-800/80 pt-4">
-        <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3"><i class="fa-solid fa-palette text-yellow-400 mr-1.5"></i> Solid Colors</h3>
-        <div class="grid grid-cols-3 gap-2">
-          <button onclick="sendCommand('blue')" class="py-2.5 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-bold text-xs tracking-wide transition-all duration-200">blue</button>
-          <button onclick="sendCommand('red')" class="py-2.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold text-xs tracking-wide transition-all duration-200">red</button>
-          <button onclick="sendCommand('green')" class="py-2.5 rounded-xl border border-green-500/20 bg-green-500/10 text-green-400 hover:bg-green-500/20 font-bold text-xs tracking-wide transition-all duration-200">green</button>
-          <button onclick="sendCommand('cyan')" class="py-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 font-bold text-xs tracking-wide transition-all duration-200">cyan</button>
-          <button onclick="sendCommand('magenta')" class="py-2.5 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-400 hover:bg-fuchsia-500/20 font-bold text-xs tracking-wide transition-all duration-200">magenta</button>
-          <button onclick="sendCommand('yellow')" class="py-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 font-bold text-xs tracking-wide transition-all duration-200">yellow</button>
+      <div class="border-t border-neutral-900 pt-4">
+        <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase mb-3 block">SOLID COLORS</span>
+        <div class="grid grid-cols-4 gap-2">
+          <button onclick="selectColor('blue')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-blue-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">blue</button>
+          <button onclick="selectColor('red')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-red-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">red</button>
+          <button onclick="selectColor('green')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-green-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">green</button>
+          <button onclick="selectColor('cyan')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-cyan-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">cyan</button>
+          <button onclick="selectColor('magenta')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-fuchsia-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">magenta</button>
+          <button onclick="selectColor('yellow')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-yellow-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">yellow</button>
+          <button onclick="selectColor('white')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-white hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">white</button>
         </div>
       </div>
     </div>
 
-    <!-- Access Logs Section -->
-    <div class="glass-card rounded-3xl p-5 shadow-xl">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase"><i class="fa-solid fa-list-check text-violet-400 mr-1.5"></i> Live Access Logs</h3>
-        <span class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+    <!-- Database Logs -->
+    <div class="luxury-panel rounded-2xl p-5">
+      <div class="flex items-center justify-between border-b border-neutral-900 pb-3 mb-3">
+        <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase">LIVE ACCESS FEED</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
       </div>
       
-      <div id="logs-container" class="h-44 overflow-y-auto no-scrollbar flex flex-col gap-2.5">
-        <div class="text-center text-xs text-slate-500 py-10">
-          <i class="fa-solid fa-spinner animate-spin text-slate-400 text-lg mb-2 block"></i> Loading database logs...
+      <div id="logs-container" class="h-44 overflow-y-auto no-scrollbar flex flex-col gap-2">
+        <div class="text-center text-xs text-neutral-600 py-10 font-mono">
+          <i class="fa-solid fa-circle-notch animate-spin text-neutral-600 mb-2 block"></i> Synchronizing database logs...
         </div>
       </div>
     </div>
 
   </main>
 
-  <!-- Visual Toast Notification Overlay -->
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 rounded-2xl glass-card border-slate-700 shadow-2xl flex items-center gap-2.5 translate-y-24 opacity-0 transition-all duration-300 z-50 max-w-[90vw] pointer-events-none">
-    <i id="toast-icon" class="fa-solid text-sm"></i>
-    <span id="toast-message" class="text-xs font-semibold tracking-wide"></span>
+  <!-- Elegant Monochromatic Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 rounded-xl bg-neutral-900 border border-neutral-800 shadow-2xl flex items-center gap-2.5 translate-y-24 opacity-0 transition-all duration-300 z-50 max-w-[90vw] pointer-events-none font-mono">
+    <i id="toast-icon" class="fa-solid text-xs"></i>
+    <span id="toast-message" class="text-[10px] uppercase font-bold tracking-wider"></span>
   </div>
 
   <script>
     // State values
     let currentBrightness = 80;
     let lastSelectedScene = 'ON';
+    let lastSelectedColor = 'white'; // Stores active color context for Breathing Mode
     const LIVE_URL = '/api/lights';
     const LOGS_URL = '/api/logs';
 
@@ -216,6 +206,7 @@
     const micStatus = document.getElementById('mic-status');
     const speechBubble = document.getElementById('speech-bubble');
     const logsContainer = document.getElementById('logs-container');
+    const breatheBtn = document.getElementById('breathe-btn');
 
     // Update Slider UI & Send Active Event
     brightnessSlider.addEventListener('input', (e) => {
@@ -237,11 +228,11 @@
       toastMessage.textContent = message;
 
       if (type === 'success') {
-        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
-        toast.className = toast.className.replace(/border-[a-z\-0-9\/]+/g, '') + ' border-emerald-500/25';
+        toastIcon.className = 'fa-solid fa-check text-white';
+        toast.style.borderColor = '#1a1a1a';
       } else {
-        toastIcon.className = 'fa-solid fa-triangle-exclamation text-rose-400';
-        toast.className = toast.className.replace(/border-[a-z\-0-9\/]+/g, '') + ' border-rose-500/25';
+        toastIcon.className = 'fa-solid fa-xmark text-rose-500';
+        toast.style.borderColor = '#991b1b';
       }
 
       toast.style.transform = 'translate(-50%, 0)';
@@ -253,27 +244,60 @@
       }, 3000);
     }
 
-    // HTTP Payload Sender
+    // Dynamic Solid Color Selector
+    function selectColor(color) {
+      lastSelectedColor = color;
+      breatheBtn.textContent = `🌬️ Breathe (${color})`;
+      sendCommand(color);
+    }
+
+    // Breathing trigger combining scene + active color context
+    function triggerBreathing() {
+      sendCommand('BREATHE');
+    }
+
+    // HTTP Payload Sender with Hardware-Protection Capping (85%)
     async function sendCommand(scene, brightness = currentBrightness, triggerSource = "App Button Click", spokenText = null) {
-      lastSelectedScene = scene; // Track the active scene for brightness updates
+      // Clamp brightness to 85 max to protect ESP32 from overheating
+      const clampedBrightness = Math.min(brightness, 85);
+      
+      // Update global tracking states
+      lastSelectedScene = scene;
+      const colors = ['blue', 'red', 'green', 'cyan', 'magenta', 'yellow', 'white'];
+      if (colors.includes(scene)) {
+        lastSelectedColor = scene;
+        breatheBtn.textContent = `🌬️ Breathe (${scene})`;
+      }
+
+      const payload = {
+        scene: scene,
+        brightness: clampedBrightness,
+        triggerSource: triggerSource,
+        spokenText: spokenText
+      };
+
+      // Inject the current solid color state into the Breathing payload dynamically
+      if (scene === 'BREATHE') {
+        payload.color = lastSelectedColor;
+      }
+
       try {
         const response = await fetch(LIVE_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ scene, brightness, triggerSource, spokenText })
+          body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-          showToast(`Action Pushed: ${scene} (${brightness}%)`, 'success');
-          // Fetch updated logs immediately to show the event
+          showToast(`SUCCESS: ${scene} (${clampedBrightness}%)`, 'success');
           fetchLogs();
         } else {
-          showToast('Failed to connect to GCP backend', 'error');
+          showToast('CONNECTION FAILURE', 'error');
         }
       } catch (err) {
-        showToast('Network error, check server connection', 'error');
+        showToast('NETWORK ERROR', 'error');
       }
     }
 
@@ -299,7 +323,8 @@
       recognition.onstart = () => {
         isRecording = true;
         micBtn.classList.add('pulsing-mic');
-        micIcon.className = 'fa-solid fa-microphone-lines text-white scale-110';
+        micBtn.style.borderColor = '#f43f5e';
+        micIcon.className = 'fa-solid fa-microphone-lines text-rose-500';
         micStatus.textContent = 'Listening...';
         speechBubble.textContent = '"Listening..."';
         speechBubble.classList.remove('hidden');
@@ -308,7 +333,8 @@
       recognition.onend = () => {
         isRecording = false;
         micBtn.classList.remove('pulsing-mic');
-        micIcon.className = 'fa-solid fa-microphone';
+        micBtn.style.borderColor = '#1a1a1a';
+        micIcon.className = 'fa-solid fa-microphone text-neutral-450';
         micStatus.textContent = 'Tap to speak commands';
         setTimeout(() => {
           speechBubble.classList.add('hidden');
@@ -318,55 +344,72 @@
       recognition.onresult = (event) => {
         const text = event.results[0][0].transcript.trim().toLowerCase();
         speechBubble.textContent = `"${text}"`;
-        
         processSpeech(text);
       };
 
       recognition.onerror = (event) => {
-        showToast(`Voice failed: ${event.error}`, 'error');
+        showToast(`VOICE ERROR: ${event.error}`, 'error');
       };
     } else {
-      micStatus.textContent = 'Speech recognition not supported on this browser';
+      micStatus.textContent = 'Voice command not supported by browser';
       micBtn.disabled = true;
-      micBtn.style.opacity = '0.5';
+      micBtn.style.opacity = '0.3';
     }
 
     // Client-side voice translation dictionary
     function processSpeech(speech) {
-      // 1. Check direct power actions
-      if (speech.includes('study mode') || speech.includes('turn on') || speech === 'on' || speech.includes('power on')) {
-        sendCommand('ON', 100, "Voice Command", speech);
-        return;
-      }
-      if (speech.includes('turn off') || speech === 'off' || speech.includes('kill the system') || speech.includes('power off')) {
+      // 1. Goodnight (Turns everything off)
+      if (speech.includes('goodnight') || speech.includes('good night') || speech.includes('sleepy')) {
         sendCommand('OFF', 0, "Voice Command", speech);
         return;
       }
       
-      // 2. Check animation modes
-      if (speech.includes('party') || speech.includes('rainbow') || speech.includes('rainbow lights')) {
-        sendCommand('RAINBOW', 100, "Voice Command", speech);
+      // 2. I'm home (White at max capped brightness 85)
+      if (speech.includes("i'm home") || speech.includes("im home") || speech.includes("i am home")) {
+        sendCommand('white', 85, "Voice Command", speech);
+        return;
+      }
+      
+      // 3. Bedtime mode (Warm low brightness 15)
+      if (speech.includes('bedtime') || speech.includes('night mode') || speech.includes('sleeping mode')) {
+        sendCommand('BEDTIME', 15, "Voice Command", speech);
+        return;
+      }
+
+      // 4. Power controls
+      if (speech.includes('turn on') || speech === 'on' || speech.includes('power on')) {
+        sendCommand('ON', 85, "Voice Command", speech);
+        return;
+      }
+      if (speech.includes('turn off') || speech === 'off' || speech.includes('power off')) {
+        sendCommand('OFF', 0, "Voice Command", speech);
+        return;
+      }
+      
+      // 5. Modes
+      if (speech.includes('party') || speech.includes('club mode') || speech.includes('music lights')) {
+        sendCommand('PARTY', 85, "Voice Command", speech);
+        return;
+      }
+      if (speech.includes('rainbow')) {
+        sendCommand('RAINBOW', 85, "Voice Command", speech);
         return;
       }
       if (speech.includes('breathe') || speech.includes('breathing')) {
         sendCommand('BREATHE', 60, "Voice Command", speech);
         return;
       }
-      if (speech.includes('disco') || speech.includes('disco lights') || speech.includes('disco flash') || speech.includes('strobe')) {
-        sendCommand('DISCO', 100, "Voice Command", speech);
-        return;
-      }
       
-      // 3. Dynamic color matcher
-      const colors = ['blue', 'red', 'green', 'cyan', 'magenta', 'yellow'];
+      // 6. Solid Colors
+      const colors = ['blue', 'red', 'green', 'cyan', 'magenta', 'yellow', 'white'];
       for (const color of colors) {
         if (speech.includes(color)) {
-          sendCommand(color, 100, "Voice Command", speech);
+          sendCommand(color, 85, "Voice Command", speech);
           return;
         }
       }
 
-      showToast(`No command match: "${speech}"`, 'error');
+      showToast(`NO COMMAND MATCH: "${speech}"`, 'error');
     }
 
     // Access Logs Loader
@@ -384,48 +427,48 @@
 
     function renderLogs(logs) {
       if (logs.length === 0) {
-        logsContainer.innerHTML = '<div class="text-center text-xs text-slate-500 py-10">No access logs found in database.</div>';
+        logsContainer.innerHTML = '<div class="text-center text-xs text-neutral-600 py-10 font-mono">No access records in database.</div>';
         return;
       }
 
       logsContainer.innerHTML = logs.map(log => {
         const time = new Date(log.timestamp).toLocaleTimeString('zh-TW', { hour12: false });
         
-        let statusBadgeClass = 'bg-slate-800 text-slate-300';
+        let statusBadgeClass = 'text-neutral-400 bg-neutral-900 border-neutral-800';
         let statusIcon = 'fa-circle-info';
         
         if (log.status === 'UNLOCKED') {
-          statusBadgeClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+          statusBadgeClass = 'text-emerald-400 bg-emerald-950/20 border-emerald-900/30';
           statusIcon = 'fa-circle-check';
         } else if (log.status === 'ALARM_INTRUDER') {
-          statusBadgeClass = 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+          statusBadgeClass = 'text-rose-450 bg-rose-950/20 border-rose-900/30';
           statusIcon = 'fa-triangle-exclamation';
         } else if (log.status === 'ON') {
-          statusBadgeClass = 'bg-teal-500/10 text-teal-400 border border-teal-500/20';
+          statusBadgeClass = 'text-neutral-200 bg-neutral-900 border-neutral-800';
           statusIcon = 'fa-power-off';
         } else if (log.status === 'OFF') {
-          statusBadgeClass = 'bg-slate-700/15 text-slate-400 border border-slate-800';
+          statusBadgeClass = 'text-neutral-500 bg-neutral-950/40 border-neutral-950';
           statusIcon = 'fa-power-off';
         }
         
-        let typeIcon = 'fa-gear';
-        if (log.eventType === 'RFID Swipe') typeIcon = 'fa-id-card';
-        else if (log.eventType === 'App Button Click') typeIcon = 'fa-mobile-screen-button';
+        let typeIcon = 'fa-microchip';
+        if (log.eventType === 'RFID Swipe') typeIcon = 'fa-id-badge';
+        else if (log.eventType === 'App Button Click') typeIcon = 'fa-tablet-screen-button';
         else if (log.eventType === 'Voice Command') typeIcon = 'fa-microphone';
 
         return `
-          <div class="p-3 rounded-2xl bg-slate-900/40 border border-slate-900/60 flex items-center justify-between text-xs transition-all hover:border-slate-800">
+          <div class="p-3 rounded-xl bg-[#090909] border border-neutral-900/80 flex items-center justify-between text-[11px] font-mono transition-all">
             <div class="flex items-center gap-2.5">
-              <span class="w-7 h-7 rounded-xl flex items-center justify-center bg-slate-800 text-slate-400">
-                <i class="fa-solid ${typeIcon}"></i>
+              <span class="w-6 h-6 rounded-lg flex items-center justify-center bg-neutral-900 text-neutral-500 border border-neutral-850">
+                <i class="fa-solid ${typeIcon} text-[10px]"></i>
               </span>
               <div>
-                <p class="font-bold text-slate-200">${log.triggeredBy}</p>
-                <p class="text-[10px] text-slate-500 font-medium">${log.eventType} • ${time}</p>
+                <p class="font-bold text-neutral-300 tracking-wide">${log.triggeredBy}</p>
+                <p class="text-[9px] text-neutral-600 font-medium">${log.eventType} • ${time}</p>
               </div>
             </div>
-            <span class="px-2 py-1 rounded-lg text-[10px] font-bold ${statusBadgeClass} flex items-center gap-1">
-              <i class="fa-solid ${statusIcon}"></i> ${log.status.length > 15 ? log.status.substring(0, 15) + '...' : log.status}
+            <span class="px-2 py-0.5 rounded border text-[9px] font-bold ${statusBadgeClass} flex items-center gap-1 uppercase tracking-wider">
+              <i class="fa-solid ${statusIcon}"></i> ${log.status.length > 18 ? log.status.substring(0, 18) + '...' : log.status}
             </span>
           </div>
         `;
