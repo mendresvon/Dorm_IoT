@@ -8,6 +8,7 @@ const Activity = require('./activity'); // Import our activity logs schema
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
 const PORT = process.env.PORT || 8080;
 
 // ----------------------------------------------------
@@ -53,7 +54,13 @@ mqttClient.on('connect', () => {
     mqttClient.subscribe('home/door/rfid', { qos: 1 });
 });
 
-mqttClient.on('message', async (topic, message) => {
+mqttClient.on('message', async (topic, message, packet) => {
+    // Ignore historical retained messages delivered immediately on connection
+    if (packet && packet.retain) {
+        console.log(`ℹ️ Ignoring historical retained MQTT packet on [${topic}]`);
+        return;
+    }
+
     if (topic === 'home/door/rfid') {
         const scannedUID = message.toString().trim().toUpperCase();
         console.log(`🔑 Card Swiped! Detected UID: ${scannedUID}`);
@@ -91,22 +98,21 @@ mqttClient.on('message', async (topic, message) => {
 // ----------------------------------------------------
 // 4. HTTP ENDPOINTS
 // ----------------------------------------------------
-app.get('/', (req, res) => {
-    res.send('🚀 Smart RFID Dormitory Backend is up and running!');
-});
-
 app.post('/api/lights', async (req, res) => {
-    const { scene, brightness } = req.body;
+    const { scene, brightness, triggerSource, spokenText } = req.body;
     console.log(`📱 App Command Received -> Scene: ${scene}, Brightness: ${brightness}`);
     
     try {
         mqttClient.publish('home/room/lights/set', JSON.stringify({ scene, brightness }), { qos: 1 });
         
-        // Record the app interaction to MongoDB
+        // Record the app interaction to MongoDB dynamically (Button vs Voice Command)
+        const eventType = triggerSource || "App Button Click";
+        const triggeredBy = spokenText ? `Spoken: "${spokenText}"` : "Mobile User";
+        
         await Activity.create({
             status: `Scene: ${scene}, Brightness: ${brightness}`,
-            eventType: "App Button Click",
-            triggeredBy: "Mobile User"
+            eventType: eventType,
+            triggeredBy: triggeredBy
         });
         
         res.status(200).json({ status: "success", message: "Command pushed to MQTT and logged" });
