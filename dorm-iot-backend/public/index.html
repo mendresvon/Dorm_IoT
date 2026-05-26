@@ -40,6 +40,10 @@
         box-shadow: 0 0 0 30px rgba(244, 63, 94, 0);
       }
     }
+    /* Idle mic glow — draws attention even when not active */
+    .mic-idle-glow {
+      box-shadow: 0 0 20px 4px rgba(244, 63, 94, 0.12), 0 0 60px 10px rgba(244, 63, 94, 0.06);
+    }
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -48,24 +52,50 @@
       scrollbar-width: none;
     }
     /* Elegant Custom Range Slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #1f1f1f;
+      border-radius: 9999px;
+      outline: none;
+      cursor: pointer;
+    }
     input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
       background: #ffffff;
       border: 2px solid #000000;
-      height: 20px;
-      width: 20px;
+      height: 22px;
+      width: 22px;
       border-radius: 9999px;
       cursor: pointer;
-      margin-top: -6px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       transition: all 0.15s ease;
     }
     input[type=range]::-webkit-slider-thumb:hover {
       transform: scale(1.15);
     }
-    input[type=range]::-webkit-slider-runnable-track {
-      background: #1f1f1f;
-      height: 8px;
+    input[type=range]::-moz-range-thumb {
+      background: #ffffff;
+      border: 2px solid #000000;
+      height: 20px;
+      width: 20px;
       border-radius: 9999px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    /* Active mode highlight */
+    .mode-active {
+      border-color: #f43f5e !important;
+      background: rgba(244, 63, 94, 0.06) !important;
+      color: #fda4af !important;
+    }
+    /* Color swatch active ring */
+    .color-active {
+      outline: 2px solid #f43f5e;
+      outline-offset: 2px;
     }
   </style>
 </head>
@@ -90,7 +120,7 @@
   <!-- Main Container -->
   <main class="flex-1 w-full max-w-md mx-auto px-6 pb-24 relative z-10 flex flex-col gap-5">
 
-    <!-- Voice Control Panel -->
+    <!-- Voice Control Panel — HERO element, made to stand out -->
     <div class="luxury-panel rounded-2xl p-6 flex flex-col items-center justify-center relative transition-all duration-300">
       <span class="absolute top-4 left-4 text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase">VOICE CONTROLLER</span>
       
@@ -98,8 +128,8 @@
         <p id="mic-status" class="text-[10px] text-neutral-400 font-medium tracking-wide">Tap and speak commands clearly</p>
       </div>
       
-      <!-- Microphone Circular Controller -->
-      <button id="mic-btn" class="w-20 h-20 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 text-2xl shadow-inner transition-all active:scale-95 duration-200 focus:outline-none hover:text-white hover:border-neutral-700">
+      <!-- Microphone — Oversized, prominent, glowing rose accent (#5) -->
+      <button id="mic-btn" class="w-24 h-24 rounded-full bg-gradient-to-br from-rose-600 to-rose-700 border-2 border-rose-500/40 flex items-center justify-center text-white text-3xl shadow-lg mic-idle-glow transition-all active:scale-95 duration-200 focus:outline-none hover:from-rose-500 hover:to-rose-600">
         <i class="fa-solid fa-microphone" id="mic-icon"></i>
       </button>
 
@@ -110,77 +140,81 @@
       </div>
     </div>
 
-    <!-- Power & Bedtime Controls -->
+    <!-- Power & Bedtime Controls (#4 — Power Off matches Power On styling) -->
     <div class="luxury-panel rounded-2xl p-5 flex flex-col gap-3">
       <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase mb-1">SYSTEM POWER</span>
       <div class="grid grid-cols-3 gap-2">
-        <button onclick="sendCommand('ON', 85)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
+        <button id="btn-power-on" onclick="sendCommand('ON', 85)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
           POWER ON
         </button>
-        <button onclick="sendCommand('OFF', 0)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-850 text-neutral-400 hover:text-rose-500 font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-rose-950">
+        <button id="btn-power-off" onclick="sendCommand('OFF', 0)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
           POWER OFF
         </button>
-        <button onclick="sendCommand('BEDTIME', 15)" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-800 text-amber-500/90 font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-amber-900/50">
+        <button id="btn-bedtime" onclick="activateBedtime()" class="py-3 px-2 rounded-xl bg-neutral-900 border border-neutral-800 text-amber-500/90 font-semibold text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-amber-900/50">
           <i class="fa-solid fa-moon mr-1 text-[10px]"></i> BEDTIME
         </button>
       </div>
     </div>
 
-    <!-- Capped Brightness Intensity Slider -->
+    <!-- Capped Brightness Intensity Slider (#8 — now sends on input for real-time control) -->
     <div class="luxury-panel rounded-2xl p-5">
       <div class="flex items-center justify-between mb-3.5">
         <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase">INTENSITY (CAPPED AT 85%)</span>
         <span id="brightness-display" class="text-xs font-mono font-bold text-white">80%</span>
       </div>
       <!-- Max slider cap is 85% to protect hardware -->
-      <input type="range" id="brightness-slider" min="0" max="85" value="80" 
-        class="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer outline-none transition-all">
+      <input type="range" id="brightness-slider" min="0" max="85" value="80">
     </div>
 
-    <!-- Modes Grid -->
+    <!-- Modes Grid (#10 — renamed to "COLORS") -->
     <div class="luxury-panel rounded-2xl p-5 flex flex-col gap-4">
       <div>
         <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase mb-3 block">MODES</span>
         <div class="grid grid-cols-3 gap-2.5">
-          <button onclick="sendCommand('RAINBOW')" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
+          <button id="mode-rainbow" onclick="activateMode('RAINBOW')" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
             🌈 Rainbow
           </button>
-          <button onclick="sendCommand('PARTY')" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
+          <button id="mode-party" onclick="activateMode('PARTY')" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
             🕺 Party
           </button>
-          <button id="breathe-btn" onclick="triggerBreathing()" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
-            🌬️ Breathe
+          <button id="mode-aurora" onclick="activateMode('AURORA')" class="p-3 rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 font-medium text-xs tracking-wide transition-all active:scale-95 duration-200 hover:border-neutral-700">
+            🌌 Aurora
           </button>
         </div>
       </div>
 
+      <!-- Colors (#10 — renamed from "SOLID COLORS", #12 — 8th color added: orange) -->
       <div class="border-t border-neutral-900 pt-4">
-        <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase mb-3 block">SOLID COLORS</span>
-        <div class="grid grid-cols-4 gap-2">
-          <button onclick="selectColor('blue')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-blue-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">blue</button>
-          <button onclick="selectColor('red')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-red-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">red</button>
-          <button onclick="selectColor('green')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-green-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">green</button>
-          <button onclick="selectColor('cyan')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-cyan-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">cyan</button>
-          <button onclick="selectColor('magenta')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-fuchsia-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">magenta</button>
-          <button onclick="selectColor('yellow')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-yellow-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">yellow</button>
-          <button onclick="selectColor('white')" class="py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-white hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">white</button>
+        <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase mb-3 block">COLORS</span>
+        <div class="grid grid-cols-4 gap-2" id="color-grid">
+          <button data-color="blue" onclick="selectColor('blue')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-blue-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">blue</button>
+          <button data-color="red" onclick="selectColor('red')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-red-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">red</button>
+          <button data-color="green" onclick="selectColor('green')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-green-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">green</button>
+          <button data-color="cyan" onclick="selectColor('cyan')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-cyan-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">cyan</button>
+          <button data-color="magenta" onclick="selectColor('magenta')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-fuchsia-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">magenta</button>
+          <button data-color="yellow" onclick="selectColor('yellow')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-yellow-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">yellow</button>
+          <button data-color="orange" onclick="selectColor('orange')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-orange-400 hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">orange</button>
+          <button data-color="white" onclick="selectColor('white')" class="color-btn py-2.5 rounded-lg border border-neutral-800 bg-neutral-950 text-white hover:bg-neutral-900 font-semibold text-xs transition-all duration-200">white</button>
         </div>
       </div>
     </div>
 
-    <!-- Database Logs -->
-    <div class="luxury-panel rounded-2xl p-5">
-      <div class="flex items-center justify-between border-b border-neutral-900 pb-3 mb-3">
-        <span class="text-[9px] font-bold tracking-widest text-neutral-500 font-mono uppercase">LIVE ACCESS FEED</span>
-        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-      </div>
-      
-      <div id="logs-container" class="h-44 overflow-y-auto no-scrollbar flex flex-col gap-2">
-        <div class="text-center text-xs text-neutral-600 py-10 font-mono">
-          <i class="fa-solid fa-circle-notch animate-spin text-neutral-600 mb-2 block"></i> Synchronizing database logs...
+    <!-- Live Access Feed — Now just a navigation button (#11) -->
+    <a href="/feed.html" class="luxury-panel rounded-2xl p-5 flex items-center justify-between group transition-all hover:border-neutral-700 cursor-pointer no-underline">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-lg flex items-center justify-center bg-neutral-900 border border-neutral-800 text-neutral-400 group-hover:text-white transition-all">
+          <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+        </span>
+        <div>
+          <span class="text-xs font-bold text-neutral-200 tracking-wide block">Live Access Feed</span>
+          <span class="text-[9px] text-neutral-500 font-mono tracking-wider">Database logs & RFID events</span>
         </div>
       </div>
-    </div>
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+        <i class="fa-solid fa-chevron-right text-neutral-600 text-xs group-hover:text-neutral-400 transition-all"></i>
+      </div>
+    </a>
 
   </main>
 
@@ -194,9 +228,8 @@
     // State values
     let currentBrightness = 80;
     let lastSelectedScene = 'ON';
-    let lastSelectedColor = 'white'; // Stores active color context for Breathing Mode
+    let activeMode = null; // Tracks which mode button is currently active
     const LIVE_URL = '/api/lights';
-    const LOGS_URL = '/api/logs';
 
     // Elements
     const brightnessSlider = document.getElementById('brightness-slider');
@@ -205,17 +238,27 @@
     const micIcon = document.getElementById('mic-icon');
     const micStatus = document.getElementById('mic-status');
     const speechBubble = document.getElementById('speech-bubble');
-    const logsContainer = document.getElementById('logs-container');
-    const breatheBtn = document.getElementById('breathe-btn');
 
-    // Update Slider UI & Send Active Event
+    // Debounce timer for slider
+    let sliderDebounce = null;
+
+    // Update Slider UI display on drag, and send command with debounce (#8)
     brightnessSlider.addEventListener('input', (e) => {
       currentBrightness = parseInt(e.target.value);
       brightnessDisplay.textContent = `${currentBrightness}%`;
+      
+      // Debounce: send the brightness update 150ms after the user stops dragging
+      clearTimeout(sliderDebounce);
+      sliderDebounce = setTimeout(() => {
+        sendCommand(lastSelectedScene, currentBrightness);
+      }, 150);
     });
 
+    // Also send on final release for reliability
     brightnessSlider.addEventListener('change', (e) => {
       currentBrightness = parseInt(e.target.value);
+      brightnessDisplay.textContent = `${currentBrightness}%`;
+      clearTimeout(sliderDebounce);
       sendCommand(lastSelectedScene, currentBrightness);
     });
 
@@ -244,16 +287,65 @@
       }, 3000);
     }
 
-    // Dynamic Solid Color Selector
-    function selectColor(color) {
-      lastSelectedColor = color;
-      breatheBtn.textContent = `🌬️ Breathe (${color})`;
-      sendCommand(color);
+    // Highlight the active mode button and clear others
+    function setActiveModeUI(modeId) {
+      // Clear all mode highlights
+      ['mode-rainbow', 'mode-party', 'mode-aurora'].forEach(id => {
+        document.getElementById(id).classList.remove('mode-active');
+      });
+      // Set the new active one
+      if (modeId) {
+        document.getElementById(modeId).classList.add('mode-active');
+        activeMode = modeId;
+      } else {
+        activeMode = null;
+      }
     }
 
-    // Breathing trigger combining scene + active color context
-    function triggerBreathing() {
-      sendCommand('BREATHE');
+    // Highlight the active color button and clear others
+    function setActiveColorUI(color) {
+      document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.classList.remove('color-active');
+      });
+      if (color) {
+        const btn = document.querySelector(`.color-btn[data-color="${color}"]`);
+        if (btn) btn.classList.add('color-active');
+      }
+    }
+
+    // Mode Activations
+    function activateMode(mode) {
+      if (mode === 'RAINBOW') {
+        setActiveModeUI('mode-rainbow');
+        setActiveColorUI(null);
+        sendCommand('RAINBOW');
+      } else if (mode === 'PARTY') {
+        setActiveModeUI('mode-party');
+        setActiveColorUI(null);
+        sendCommand('PARTY', 85);
+      } else if (mode === 'AURORA') {
+        setActiveModeUI('mode-aurora');
+        setActiveColorUI(null);
+        sendCommand('AURORA');
+      }
+    }
+
+    // Bedtime activation (#2, #7 — warm color, low brightness)
+    function activateBedtime() {
+      setActiveModeUI(null);
+      setActiveColorUI(null);
+      // Set slider to 15 to reflect bedtime brightness
+      currentBrightness = 15;
+      brightnessSlider.value = 15;
+      brightnessDisplay.textContent = '15%';
+      sendCommand('BEDTIME', 15);
+    }
+
+    // Dynamic Color Selector
+    function selectColor(color) {
+      setActiveColorUI(color);
+      setActiveModeUI(null);
+      sendCommand(color);
     }
 
     // HTTP Payload Sender with Hardware-Protection Capping (85%)
@@ -261,13 +353,8 @@
       // Clamp brightness to 85 max to protect ESP32 from overheating
       const clampedBrightness = Math.min(brightness, 85);
       
-      // Update global tracking states
+      // Update global tracking state
       lastSelectedScene = scene;
-      const colors = ['blue', 'red', 'green', 'cyan', 'magenta', 'yellow', 'white'];
-      if (colors.includes(scene)) {
-        lastSelectedColor = scene;
-        breatheBtn.textContent = `🌬️ Breathe (${scene})`;
-      }
 
       const payload = {
         scene: scene,
@@ -276,9 +363,13 @@
         spokenText: spokenText
       };
 
-      // Inject the current solid color state into the Breathing payload dynamically
-      if (scene === 'BREATHE') {
-        payload.color = lastSelectedColor;
+      // Inject extra metadata for specific modes so ESP32 firmware can differentiate
+      if (scene === 'PARTY') {
+        payload.effect = 'strobe';
+        payload.speed = 'fast';
+      }
+      if (scene === 'BEDTIME') {
+        payload.color = 'warm';
       }
 
       try {
@@ -292,7 +383,6 @@
 
         if (response.ok) {
           showToast(`SUCCESS: ${scene} (${clampedBrightness}%)`, 'success');
-          fetchLogs();
         } else {
           showToast('CONNECTION FAILURE', 'error');
         }
@@ -323,8 +413,9 @@
       recognition.onstart = () => {
         isRecording = true;
         micBtn.classList.add('pulsing-mic');
-        micBtn.style.borderColor = '#f43f5e';
-        micIcon.className = 'fa-solid fa-microphone-lines text-rose-500';
+        micBtn.classList.remove('mic-idle-glow');
+        micBtn.style.borderColor = '#fff';
+        micIcon.className = 'fa-solid fa-microphone-lines text-white text-3xl';
         micStatus.textContent = 'Listening...';
         speechBubble.textContent = '"Listening..."';
         speechBubble.classList.remove('hidden');
@@ -333,8 +424,9 @@
       recognition.onend = () => {
         isRecording = false;
         micBtn.classList.remove('pulsing-mic');
-        micBtn.style.borderColor = '#1a1a1a';
-        micIcon.className = 'fa-solid fa-microphone text-neutral-450';
+        micBtn.classList.add('mic-idle-glow');
+        micBtn.style.borderColor = '';
+        micIcon.className = 'fa-solid fa-microphone text-white text-3xl';
         micStatus.textContent = 'Tap to speak commands';
         setTimeout(() => {
           speechBubble.classList.add('hidden');
@@ -356,123 +448,84 @@
       micBtn.style.opacity = '0.3';
     }
 
-    // Client-side voice translation dictionary
+    // ─── Voice Command Engine (regex word-boundary matching) ─────────────────
+    // Uses \b word boundaries so "lights off" matches "off", but "offline" won't.
+    // Priority order matters — checked top to bottom, first match wins.
     function processSpeech(speech) {
-      // 1. Goodnight (Turns everything off)
-      if (speech.includes('goodnight') || speech.includes('good night') || speech.includes('sleepy')) {
+
+      // ── Tier 1: Specific phrases (checked first to avoid partial word conflicts) ──
+
+      // "goodnight" / "good night" / "sleepy" → full off
+      if (/good\s?night|sleepy/.test(speech)) {
         sendCommand('OFF', 0, "Voice Command", speech);
-        return;
-      }
-      
-      // 2. I'm home (White at max capped brightness 85)
-      if (speech.includes("i'm home") || speech.includes("im home") || speech.includes("i am home")) {
-        sendCommand('white', 85, "Voice Command", speech);
-        return;
-      }
-      
-      // 3. Bedtime mode (Warm low brightness 15)
-      if (speech.includes('bedtime') || speech.includes('night mode') || speech.includes('sleeping mode')) {
-        sendCommand('BEDTIME', 15, "Voice Command", speech);
         return;
       }
 
-      // 4. Power controls
-      if (speech.includes('turn on') || speech === 'on' || speech.includes('power on')) {
-        sendCommand('ON', 85, "Voice Command", speech);
+      // "i'm home" / "im home" / "i am home" → white at full brightness
+      if (/i'?m home|i am home/.test(speech)) {
+        sendCommand('white', 85, "Voice Command", speech);
         return;
       }
-      if (speech.includes('turn off') || speech === 'off' || speech.includes('power off')) {
+
+      // Bedtime phrases
+      if (/\bbedtime\b|night mode|sleeping mode/.test(speech)) {
+        activateBedtime();
+        return;
+      }
+
+      // ── Tier 2: Modes ─────────────────────────────────────────────────────
+
+      if (/\bparty\b|club mode|disco|music lights/.test(speech)) {
+        activateMode('PARTY');
+        return;
+      }
+
+      if (/\brainbow\b/.test(speech)) {
+        activateMode('RAINBOW');
+        return;
+      }
+
+      if (/\baurora\b|northern lights/.test(speech)) {
+        activateMode('AURORA');
+        return;
+      }
+
+      // ── Tier 3: Power on/off (word boundary so "orange" doesn't trigger "on") ──
+
+      // OFF — matches: "off", "lights off", "turn off", "turn off the lights", "switch off"
+      if (/\boff\b/.test(speech)) {
         sendCommand('OFF', 0, "Voice Command", speech);
         return;
       }
-      
-      // 5. Modes
-      if (speech.includes('party') || speech.includes('club mode') || speech.includes('music lights')) {
-        sendCommand('PARTY', 85, "Voice Command", speech);
+
+      // ON — matches: "on", "lights on", "turn on", "turn on the lights", "switch on"
+      // \bon\b safely excludes words like "orange", "only", "console"
+      if (/\bon\b/.test(speech)) {
+        sendCommand('ON', 85, "Voice Command", speech);
         return;
       }
-      if (speech.includes('rainbow')) {
-        sendCommand('RAINBOW', 85, "Voice Command", speech);
-        return;
-      }
-      if (speech.includes('breathe') || speech.includes('breathing')) {
-        sendCommand('BREATHE', 60, "Voice Command", speech);
-        return;
-      }
-      
-      // 6. Solid Colors
-      const colors = ['blue', 'red', 'green', 'cyan', 'magenta', 'yellow', 'white'];
-      for (const color of colors) {
-        if (speech.includes(color)) {
-          sendCommand(color, 85, "Voice Command", speech);
+
+      // ── Tier 4: Solid Colors ──────────────────────────────────────────────
+
+      const colorPatterns = [
+        { pattern: /\bblue\b/,    color: 'blue'    },
+        { pattern: /\bred\b/,     color: 'red'     },
+        { pattern: /\bgreen\b/,   color: 'green'   },
+        { pattern: /\bcyan\b/,    color: 'cyan'    },
+        { pattern: /\bmagenta\b/, color: 'magenta' },
+        { pattern: /\byellow\b/,  color: 'yellow'  },
+        { pattern: /\borange\b/,  color: 'orange'  },
+        { pattern: /\bwhite\b/,   color: 'white'   },
+      ];
+
+      for (const { pattern, color } of colorPatterns) {
+        if (pattern.test(speech)) {
+          selectColor(color);
           return;
         }
       }
 
-      showToast(`NO COMMAND MATCH: "${speech}"`, 'error');
-    }
-
-    // Access Logs Loader
-    async function fetchLogs() {
-      try {
-        const response = await fetch(LOGS_URL);
-        if (response.ok) {
-          const logs = await response.json();
-          renderLogs(logs);
-        }
-      } catch (err) {
-        console.error('Error fetching logs:', err);
-      }
-    }
-
-    function renderLogs(logs) {
-      if (logs.length === 0) {
-        logsContainer.innerHTML = '<div class="text-center text-xs text-neutral-600 py-10 font-mono">No access records in database.</div>';
-        return;
-      }
-
-      logsContainer.innerHTML = logs.map(log => {
-        const time = new Date(log.timestamp).toLocaleTimeString('zh-TW', { hour12: false });
-        
-        let statusBadgeClass = 'text-neutral-400 bg-neutral-900 border-neutral-800';
-        let statusIcon = 'fa-circle-info';
-        
-        if (log.status === 'UNLOCKED') {
-          statusBadgeClass = 'text-emerald-400 bg-emerald-950/20 border-emerald-900/30';
-          statusIcon = 'fa-circle-check';
-        } else if (log.status === 'ALARM_INTRUDER') {
-          statusBadgeClass = 'text-rose-450 bg-rose-950/20 border-rose-900/30';
-          statusIcon = 'fa-triangle-exclamation';
-        } else if (log.status === 'ON') {
-          statusBadgeClass = 'text-neutral-200 bg-neutral-900 border-neutral-800';
-          statusIcon = 'fa-power-off';
-        } else if (log.status === 'OFF') {
-          statusBadgeClass = 'text-neutral-500 bg-neutral-950/40 border-neutral-950';
-          statusIcon = 'fa-power-off';
-        }
-        
-        let typeIcon = 'fa-microchip';
-        if (log.eventType === 'RFID Swipe') typeIcon = 'fa-id-badge';
-        else if (log.eventType === 'App Button Click') typeIcon = 'fa-tablet-screen-button';
-        else if (log.eventType === 'Voice Command') typeIcon = 'fa-microphone';
-
-        return `
-          <div class="p-3 rounded-xl bg-[#090909] border border-neutral-900/80 flex items-center justify-between text-[11px] font-mono transition-all">
-            <div class="flex items-center gap-2.5">
-              <span class="w-6 h-6 rounded-lg flex items-center justify-center bg-neutral-900 text-neutral-500 border border-neutral-850">
-                <i class="fa-solid ${typeIcon} text-[10px]"></i>
-              </span>
-              <div>
-                <p class="font-bold text-neutral-300 tracking-wide">${log.triggeredBy}</p>
-                <p class="text-[9px] text-neutral-600 font-medium">${log.eventType} • ${time}</p>
-              </div>
-            </div>
-            <span class="px-2 py-0.5 rounded border text-[9px] font-bold ${statusBadgeClass} flex items-center gap-1 uppercase tracking-wider">
-              <i class="fa-solid ${statusIcon}"></i> ${log.status.length > 18 ? log.status.substring(0, 18) + '...' : log.status}
-            </span>
-          </div>
-        `;
-      }).join('');
+      showToast(`NO MATCH: "${speech}"`, 'error');
     }
 
     // Register Service Worker for PWA
@@ -485,10 +538,6 @@
         });
       });
     }
-
-    // Auto-fetch logs every 3 seconds to keep dashboard alive
-    fetchLogs();
-    setInterval(fetchLogs, 3000);
   </script>
 </body>
 </html>

@@ -99,11 +99,17 @@ mqttClient.on('message', async (topic, message, packet) => {
 // 4. HTTP ENDPOINTS
 // ----------------------------------------------------
 app.post('/api/lights', async (req, res) => {
-    const { scene, brightness, triggerSource, spokenText } = req.body;
-    console.log(`📱 App Command Received -> Scene: ${scene}, Brightness: ${brightness}`);
+    const { scene, brightness, triggerSource, spokenText, color, effect, speed } = req.body;
+    console.log(`📱 App Command Received -> Scene: ${scene}, Brightness: ${brightness}, Color: ${color || 'N/A'}, Effect: ${effect || 'N/A'}`);
+    
+    // Build the MQTT payload with all available fields for ESP32
+    const mqttPayload = { scene, brightness };
+    if (color) mqttPayload.color = color;
+    if (effect) mqttPayload.effect = effect;
+    if (speed) mqttPayload.speed = speed;
     
     try {
-        mqttClient.publish('home/room/lights/set', JSON.stringify({ scene, brightness }), { qos: 1 });
+        mqttClient.publish('home/room/lights/set', JSON.stringify(mqttPayload), { qos: 1 });
         
         // Record the app interaction to MongoDB dynamically (Button vs Voice Command)
         const eventType = triggerSource || "App Button Click";
