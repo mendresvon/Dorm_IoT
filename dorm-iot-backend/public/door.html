@@ -754,34 +754,22 @@
 
     async function loadPresets() {
       try {
-        const res  = await fetch('/api/logs');
-        const logs = await res.json();
-        const seen = new Set();
-        const presets = [];
-        for (const log of logs) {
-          if (log.status === 'UNLOCKED' && log.triggeredBy && !seen.has(log.triggeredBy)) {
-            seen.add(log.triggeredBy);
-            presets.push({ label: log.triggeredBy, type: 'known' });
-          } else if (log.status === 'ALARM_INTRUDER' && !seen.has('unknown')) {
-            seen.add('unknown');
-            presets.push({ label: 'Unknown Card', uid: 'DEADBEEF', type: 'unknown' });
-          }
-          if (presets.length >= 4) break;
-        }
+        const res  = await fetch('/api/students');
+        const students = await res.json();
         const presetsEl = document.getElementById('sim-presets');
-        if (!presets.length) {
-          presetsEl.innerHTML = '<span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#2a2a2a;">No recent scans to preset</span>';
-          return;
-        }
-        presetsEl.innerHTML = presets.map(p => {
-          if (p.type === 'unknown') {
-            return '<span class="preset-chip" onclick="simulateScan('DEADBEEF')">&#x26D4; Unknown</span>';
-          }
-          return '<span class="preset-chip" style="cursor:default;">&#x2705; ' + p.label + '</span>';
+        
+        // Generate interactive buttons for each registered student
+        let html = students.map(s => {
+          return `<span class="preset-chip" onclick="simulateScan('${s.uid}')">🟢 ${s.name} (${s.room})</span>`;
         }).join('');
+        
+        // Add a card simulation button for an unknown card
+        html += `<span class="preset-chip" onclick="simulateScan('DEADBEEF')">🔴 Unknown Card</span>`;
+        
+        presetsEl.innerHTML = html;
       } catch (_) {
         document.getElementById('sim-presets').innerHTML =
-          '<span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#2a2a2a;">Could not load presets</span>';
+          `<span class="preset-chip" onclick="simulateScan('DEADBEEF')">🔴 Unknown Card</span>`;
       }
     }
     loadPresets();

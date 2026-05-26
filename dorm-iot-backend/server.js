@@ -162,6 +162,17 @@ app.get('/api/door-status', (req, res) => {
     res.json(lastDoorEvent || { type: 'LOCKED', timestamp: new Date().toISOString() });
 });
 
+// Dynamic student presets endpoint for the virtual door simulator
+app.get('/api/students', async (req, res) => {
+    try {
+        const students = await Student.find({}, 'name uid room');
+        res.json(students);
+    } catch (err) {
+        console.error('❌ Error fetching students:', err);
+        res.status(500).json({ error: 'Failed to fetch students' });
+    }
+});
+
 // Simulate scan endpoint — lets the door page trigger a test scan without needing the ESP32
 app.post('/api/simulate-scan', async (req, res) => {
     const { uid } = req.body;
