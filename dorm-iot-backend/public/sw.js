@@ -14,6 +14,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only intercept GET requests and skip API calls
+  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+    return; // Let the browser handle the request normally without Service Worker interception
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
