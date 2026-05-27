@@ -830,7 +830,15 @@
       
       try {
         const res = await fetch('/api/mqtt-reconnect', { method: 'POST' });
-        const data = await res.json();
+        
+        let data = {};
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          throw new Error(`Server returned non-JSON response (Status ${res.status}). Did you restart the server?`);
+        }
+        
         if (res.ok && data.connected) {
           console.log('MQTT Connected successfully');
         } else {
