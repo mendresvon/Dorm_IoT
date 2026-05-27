@@ -510,9 +510,15 @@
     <a href="/" class="back-btn">
       <i class="fa-solid fa-chevron-left"></i> Dashboard
     </a>
-    <div class="header-badge">
-      <span class="sse-dot" id="sse-dot"></span>
-      <span id="sse-label">CONNECTING</span>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <div class="header-badge" id="mqtt-badge">
+        <span class="sse-dot" id="mqtt-dot" style="background: #737373;"></span>
+        <span id="mqtt-label">MQTT: OFF</span>
+      </div>
+      <div class="header-badge">
+        <span class="sse-dot" id="sse-dot"></span>
+        <span id="sse-label">CONNECTING</span>
+      </div>
     </div>
   </header>
 
@@ -773,6 +779,38 @@
       }
     }
     loadPresets();
+
+    // Poll MQTT Status
+    async function updateMqttStatus() {
+      const mqttDot = document.getElementById('mqtt-dot');
+      const mqttLabel = document.getElementById('mqtt-label');
+      const mqttBadge = document.getElementById('mqtt-badge');
+      try {
+        const res = await fetch('/api/mqtt-status');
+        const data = await res.json();
+        if (data.connected) {
+          mqttDot.style.background = '#22c55e';
+          mqttDot.classList.add('live');
+          mqttLabel.textContent = 'MQTT: LIVE';
+          mqttLabel.style.color = '#22c55e';
+          mqttBadge.style.borderColor = 'rgba(34, 197, 94, 0.2)';
+        } else {
+          mqttDot.style.background = '#ef4444';
+          mqttDot.classList.remove('live');
+          mqttLabel.textContent = 'MQTT: OFF';
+          mqttLabel.style.color = '#ef4444';
+          mqttBadge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+        }
+      } catch (err) {
+        mqttDot.style.background = '#737373';
+        mqttDot.classList.remove('live');
+        mqttLabel.textContent = 'MQTT: ERROR';
+        mqttLabel.style.color = '#737373';
+        mqttBadge.style.borderColor = '';
+      }
+    }
+    updateMqttStatus();
+    setInterval(updateMqttStatus, 3000);
   </script>
 </body>
 </html>

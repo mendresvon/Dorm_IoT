@@ -162,6 +162,11 @@ app.get('/api/door-status', (req, res) => {
     res.json(lastDoorEvent || { type: 'LOCKED', timestamp: new Date().toISOString() });
 });
 
+// Expose the MQTT connection status
+app.get('/api/mqtt-status', (req, res) => {
+    res.json({ connected: mqttClient.connected });
+});
+
 // Dynamic student presets endpoint for the virtual door simulator
 app.get('/api/students', async (req, res) => {
     try {
