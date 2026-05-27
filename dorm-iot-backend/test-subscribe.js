@@ -8,7 +8,7 @@ const client = mqtt.connect(MQTT_BROKER);
 
 client.on('connect', () => {
     console.log(`✅ Connected! Subscribing to topic: "${TOPIC}"...`);
-    client.subscribe(TOPIC, (err) => {
+    client.subscribe(TOPIC, { qos: 1 }, (err) => {
         if (!err) {
             console.log('📥 Subscribed! Waiting for messages. Make a POST request to your API to trigger this...');
         }

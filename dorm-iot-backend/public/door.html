@@ -183,12 +183,12 @@
     .door-leaf {
       position: absolute;
       inset: 4px;
-      background: linear-gradient(135deg, #1c1c1c 0%, #161616 40%, #111111 100%);
+      background: linear-gradient(135deg, #ffffff 0%, #f4f4f6 100%);
       border-radius: 4px 4px 0 0;
       transform-origin: left center;
       transform: rotateY(0deg);
       transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid #2a2a2a;
+      border: 1px solid #d1d1d6;
       will-change: transform;
     }
 
@@ -199,9 +199,10 @@
     /* Door panels (decorative insets) */
     .door-panel {
       position: absolute;
-      border: 1px solid #252525;
+      border: 1px solid #e5e5ea;
       border-radius: 3px;
-      background: #141414;
+      background: #fafafa;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
     }
     .door-panel.top    { top: 20px; left: 16px; right: 16px; height: 80px; }
     .door-panel.bottom { bottom: 30px; left: 16px; right: 16px; height: 100px; }
@@ -240,12 +241,12 @@
       right: 22px;
       bottom: 80px;
       font-size: 12px;
-      color: #d4af37;
-      opacity: 0.6;
+      color: #48484a;
+      opacity: 0.7;
       transition: opacity 0.4s, color 0.4s;
     }
-    body.state-unlocked .door-lock-icon { color: #4ade80; opacity: 0.9; }
-    body.state-denied   .door-lock-icon { color: #f87171; opacity: 1; }
+    body.state-unlocked .door-lock-icon { color: #16a34a; opacity: 1; }
+    body.state-denied   .door-lock-icon { color: #dc2626; opacity: 1; }
 
     /* Door inner (visible when open) */
     .door-interior {
