@@ -511,7 +511,7 @@
       <i class="fa-solid fa-chevron-left"></i> Dashboard
     </a>
     <div style="display: flex; gap: 8px; align-items: center;">
-      <button class="header-badge" id="mqtt-badge" onclick="reconnectMqtt()" style="cursor: pointer; transition: all 0.2s; border: 1px solid #1a1a1a; outline: none;">
+      <button class="header-badge" id="mqtt-badge" type="button" onclick="reconnectMqtt(event)" style="cursor: pointer; transition: all 0.2s; border: 1px solid #1a1a1a; outline: none;">
         <span class="sse-dot" id="mqtt-dot" style="background: #737373;"></span>
         <span id="mqtt-label">MQTT: OFF</span>
       </button>
@@ -813,7 +813,8 @@
     setInterval(updateMqttStatus, 3000);
 
     let isReconnecting = false;
-    async function reconnectMqtt() {
+    async function reconnectMqtt(event) {
+      if (event) event.preventDefault();
       if (isReconnecting) return;
       isReconnecting = true;
       

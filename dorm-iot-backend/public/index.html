@@ -112,7 +112,7 @@
         <p class="text-[10px] text-neutral-500 font-semibold tracking-wider uppercase mt-1">🇹🇼 Dynamic Client • Active Capping</p>
       </div>
       <div class="flex gap-2">
-        <button id="mqtt-badge" onclick="reconnectMqtt()" class="px-2 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-neutral-500 border border-neutral-850/80 flex items-center gap-1.5 transition-all font-mono hover:bg-neutral-850 hover:text-white active:scale-95 duration-150 focus:outline-none">
+        <button id="mqtt-badge" type="button" onclick="reconnectMqtt(event)" class="px-2 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-neutral-500 border border-neutral-850/80 flex items-center gap-1.5 transition-all font-mono hover:bg-neutral-850 hover:text-white active:scale-95 duration-150 focus:outline-none">
           <span id="mqtt-dot" class="w-1.5 h-1.5 rounded-full bg-neutral-700 transition-all duration-300"></span> MQTT: OFF
         </button>
         <div id="connection-badge" class="px-2.5 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-neutral-400 border border-neutral-800/80 flex items-center gap-1.5 transition-all">
@@ -573,7 +573,8 @@
     setInterval(updateMqttStatus, 3000);
 
     let isReconnecting = false;
-    async function reconnectMqtt() {
+    async function reconnectMqtt(event) {
+      if (event) event.preventDefault();
       if (isReconnecting) return;
       isReconnecting = true;
       
@@ -591,6 +592,7 @@
           showToast(`CONNECTION FAILED: ${data.message || 'Error'}`, 'error');
         }
       } catch (err) {
+        console.error('MQTT reconnect error details:', err);
         showToast('NETWORK ERROR TRYING TO RECONNECT', 'error');
       } finally {
         isReconnecting = false;
