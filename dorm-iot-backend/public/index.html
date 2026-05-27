@@ -112,9 +112,9 @@
         <p class="text-[10px] text-neutral-500 font-semibold tracking-wider uppercase mt-1">🇹🇼 Dynamic Client • Active Capping</p>
       </div>
       <div class="flex gap-2">
-        <div id="mqtt-badge" class="px-2 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-neutral-500 border border-neutral-850/80 flex items-center gap-1.5 transition-all font-mono">
+        <button id="mqtt-badge" onclick="reconnectMqtt()" class="px-2 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-neutral-500 border border-neutral-850/80 flex items-center gap-1.5 transition-all font-mono hover:bg-neutral-850 hover:text-white active:scale-95 duration-150 focus:outline-none">
           <span id="mqtt-dot" class="w-1.5 h-1.5 rounded-full bg-neutral-700 transition-all duration-300"></span> MQTT: OFF
-        </div>
+        </button>
         <div id="connection-badge" class="px-2.5 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-neutral-400 border border-neutral-800/80 flex items-center gap-1.5 transition-all">
           <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> SYSTEM OK
         </div>
@@ -571,6 +571,32 @@
     }
     updateMqttStatus();
     setInterval(updateMqttStatus, 3000);
+
+    let isReconnecting = false;
+    async function reconnectMqtt() {
+      if (isReconnecting) return;
+      isReconnecting = true;
+      
+      const mqttBadge = document.getElementById('mqtt-badge');
+      mqttBadge.className = 'px-2 py-1 text-[9px] font-bold tracking-wider rounded-md bg-neutral-900 text-amber-400 border border-amber-950/80 flex items-center gap-1.5 transition-all font-mono';
+      mqttBadge.innerHTML = '<span id="mqtt-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-spin"></span> CONNECTING...';
+      showToast('CONNECTING TO MQTT BROKER...', 'success');
+      
+      try {
+        const res = await fetch('/api/mqtt-reconnect', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok && data.connected) {
+          showToast('MQTT CONNECTED!', 'success');
+        } else {
+          showToast(`CONNECTION FAILED: ${data.message || 'Error'}`, 'error');
+        }
+      } catch (err) {
+        showToast('NETWORK ERROR TRYING TO RECONNECT', 'error');
+      } finally {
+        isReconnecting = false;
+        updateMqttStatus();
+      }
+    }
 
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {

@@ -511,10 +511,10 @@
       <i class="fa-solid fa-chevron-left"></i> Dashboard
     </a>
     <div style="display: flex; gap: 8px; align-items: center;">
-      <div class="header-badge" id="mqtt-badge">
+      <button class="header-badge" id="mqtt-badge" onclick="reconnectMqtt()" style="cursor: pointer; transition: all 0.2s; border: 1px solid #1a1a1a; outline: none;">
         <span class="sse-dot" id="mqtt-dot" style="background: #737373;"></span>
         <span id="mqtt-label">MQTT: OFF</span>
-      </div>
+      </button>
       <div class="header-badge">
         <span class="sse-dot" id="sse-dot"></span>
         <span id="sse-label">CONNECTING</span>
@@ -811,6 +811,37 @@
     }
     updateMqttStatus();
     setInterval(updateMqttStatus, 3000);
+
+    let isReconnecting = false;
+    async function reconnectMqtt() {
+      if (isReconnecting) return;
+      isReconnecting = true;
+      
+      const mqttDot = document.getElementById('mqtt-dot');
+      const mqttLabel = document.getElementById('mqtt-label');
+      const mqttBadge = document.getElementById('mqtt-badge');
+      
+      mqttDot.style.background = '#d97706';
+      mqttDot.classList.remove('live');
+      mqttLabel.textContent = 'CONNECTING...';
+      mqttLabel.style.color = '#d97706';
+      mqttBadge.style.borderColor = 'rgba(217, 119, 6, 0.2)';
+      
+      try {
+        const res = await fetch('/api/mqtt-reconnect', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok && data.connected) {
+          console.log('MQTT Connected successfully');
+        } else {
+          console.error('MQTT Reconnection failed:', data.message);
+        }
+      } catch (err) {
+        console.error('Network error during reconnect:', err);
+      } finally {
+        isReconnecting = false;
+        updateMqttStatus();
+      }
+    }
   </script>
 </body>
 </html>

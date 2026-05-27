@@ -167,6 +167,39 @@ app.get('/api/mqtt-status', (req, res) => {
     res.json({ connected: mqttClient.connected });
 });
 
+// Trigger and await MQTT reconnection
+app.post('/api/mqtt-reconnect', (req, res) => {
+    if (mqttClient.connected) {
+        return res.json({ connected: true, message: 'Already connected' });
+    }
+
+    const onConnect = () => {
+        cleanup();
+        res.json({ connected: true, message: 'Reconnected successfully' });
+    };
+
+    const onError = (err) => {
+        cleanup();
+        res.status(500).json({ connected: false, message: err.message });
+    };
+
+    const timeout = setTimeout(() => {
+        cleanup();
+        res.status(504).json({ connected: false, message: 'Reconnection timed out' });
+    }, 8000);
+
+    function cleanup() {
+        mqttClient.off('connect', onConnect);
+        mqttClient.off('error', onError);
+        clearTimeout(timeout);
+    }
+
+    mqttClient.once('connect', onConnect);
+    mqttClient.once('error', onError);
+
+    mqttClient.reconnect();
+});
+
 // Dynamic student presets endpoint for the virtual door simulator
 app.get('/api/students', async (req, res) => {
     try {
