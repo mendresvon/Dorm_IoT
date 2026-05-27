@@ -372,6 +372,12 @@
 
     // HTTP Payload Sender with Hardware-Protection Capping (85%)
     async function sendCommand(scene, brightness = currentBrightness, triggerSource = "App Button Click", spokenText = null) {
+      // If turning off, clear all active color and mode UI highlights
+      if (scene === 'OFF') {
+        setActiveModeUI(null);
+        setActiveColorUI(null);
+      }
+
       // Clamp brightness to 85 max to protect ESP32 from overheating
       const clampedBrightness = Math.min(brightness, 85);
       
