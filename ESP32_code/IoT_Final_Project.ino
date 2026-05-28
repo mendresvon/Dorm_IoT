@@ -110,11 +110,23 @@ void setup_wifi() {
   Serial.print("Connecting to WiFi: ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
+  
+  bool toggle = false;
   while (WiFi.status() != WL_CONNECTED) {
+    FastLED.setBrightness(15); // Low brightness for hardware protection
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    leds[0] = toggle ? CRGB::Orange : CRGB::Black;
+    FastLED.show();
+    toggle = !toggle;
+    
     delay(500);
     Serial.print(".");
   }
   Serial.println("\n✅ WiFi connected: " + WiFi.localIP().toString());
+  
+  // Clear status LED
+  leds[0] = CRGB::Black;
+  FastLED.show();
 }
 
 // ─── MQTT Callback ─────────────────────────────────────────────────────────
@@ -185,7 +197,20 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 // ─── MQTT Reconnect ────────────────────────────────────────────────────────
 void reconnect() {
   while (!mqttClient.connected()) {
+    // If WiFi connection was lost, handle WiFi reconnection first
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("⚠️ WiFi connection lost. Reconnecting...");
+      setup_wifi();
+    }
+
     Serial.print("Connecting to MQTT...");
+    
+    // Set low brightness and show blue to indicate MQTT connection attempt
+    FastLED.setBrightness(15);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    leds[0] = CRGB::Blue;
+    FastLED.show();
+
     String clientId = "ESP32Dorm-" + String(random(0xffff), HEX);
     if (mqttClient.connect(clientId.c_str())) {
       Serial.println(" ✅ Connected");
@@ -193,11 +218,31 @@ void reconnect() {
       // MODIFIED: Added 1 as the second parameter to subscribe with QoS 1
       mqttClient.subscribe(topic_led_control, 1); 
       
+      // Successful connection indicator: Show solid Green for 3 seconds
+      fill_solid(leds, NUM_LEDS, CRGB::Black);
+      leds[0] = CRGB::Green;
+      FastLED.show();
+      delay(3000);
+      
+      // Reset strip to black and restore normal brightness
+      fill_solid(leds, NUM_LEDS, CRGB::Black);
+      FastLED.setBrightness(currentBrightness);
+      FastLED.show();
     } else {
       Serial.print(" ❌ Failed rc=");
       Serial.print(mqttClient.state());
       Serial.println(", retrying in 5s...");
-      delay(5000);
+      
+      // Blink blue/black for 5 seconds (10 cycles of 500ms)
+      for (int i = 0; i < 10; i++) {
+        // If WiFi is lost during this wait, break early to reconnect WiFi
+        if (WiFi.status() != WL_CONNECTED) {
+          break;
+        }
+        leds[0] = (i % 2 == 0) ? CRGB::Blue : CRGB::Black;
+        FastLED.show();
+        delay(500);
+      }
     }
   }
 }
