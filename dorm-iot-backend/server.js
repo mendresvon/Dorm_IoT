@@ -51,11 +51,28 @@ function sendNotificationEmail(studentName, roomNumber, parentEmail) {
 // ----------------------------------------------------
 // 3. MQTT BROKER CONNECTION & LIVE DB LOOKUP
 // ----------------------------------------------------
+console.log(`🔌 Initializing MQTT connection to: ${process.env.MQTT_BROKER || 'undefined (defaulting to localhost)'}`);
 const mqttClient = mqtt.connect(process.env.MQTT_BROKER);
 
 mqttClient.on('connect', () => {
     console.log('📡 Connected to HiveMQ Cloud Broker successfully!');
     mqttClient.subscribe('home/door/rfid', { qos: 1 });
+});
+
+mqttClient.on('error', (err) => {
+    console.error('❌ MQTT Client Error:', err.message || err);
+});
+
+mqttClient.on('offline', () => {
+    console.warn('⚠️ MQTT Client went offline.');
+});
+
+mqttClient.on('close', () => {
+    console.log('🔌 MQTT connection closed.');
+});
+
+mqttClient.on('reconnect', () => {
+    console.log('🔄 MQTT Client attempting to reconnect...');
 });
 
 mqttClient.on('message', async (topic, message, packet) => {
